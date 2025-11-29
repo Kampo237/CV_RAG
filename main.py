@@ -481,6 +481,9 @@ async def answer_question(request: QuestionRequest, db: db_dependency):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erreur: {str(e)}")
 
+
+
+
 # ========== ROUTES UTILITAIRES ==========
 @app.get("/stats/")
 async def get_stats(db: db_dependency):
