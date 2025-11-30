@@ -1,0 +1,107 @@
+services:
+  # ========================================================================
+  # POSTGRES + PGVECTOR
+  # ========================================================================
+  db:
+    build:
+      context: ./db
+    image: kpo237/cv-chatbot-db:latest
+    container_name: cv-chatbot-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+      POSTGRES_INITDB_ARGS: "-c shared_preload_libraries=vector"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -U admin -d QuizDb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ========================================================================
+  # FASTAPI RAG API
+  # ========================================================================
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: kpo237/cv-chatbot-api:latest
+    container_name: cv-chatbot-api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://admin:Admin123@db:5432/QuizDb
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: admin
+      DB_PASSWORD: Admin123
+      DB_NAME: QuizDb
+
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      VOYAGE_API_KEY: ${VOYAGE_API_KEY}
+
+      LANGCHAIN_TRACING_V2: ${LANGCHAIN_TRACING_V2:-false}
+      LANGCHAIN_API_KEY: ${LANGCHAIN_API_KEY:-}
+      LANGCHAIN_PROJECT: ${LANGCHAIN_PROJECT:-cv-chatbot-rag}
+    ports:
+      - "8001:8001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ========================================================================
+  # CHAINLIT UI
+  # ========================================================================
+  chainlit:
+    image: kpo237/cv-chatbot-api:latest
+    container_name: cv-chatbot-ui
+    restart: unless-stopped
+    depends_on:
+      - api
+    working_dir: /app
+    volumes:
+      - ./app/chainlit_app.py:/app/chainlit_app.py:ro
+      - ./.chainlit:/app/.chainlit
+      - ./chainlit_files:/app/.files
+      - ./app/chainlit.md:/app/chainlit.md:ro
+    environment:
+      API_BASE_URL: http://api:8001
+    command: >
+      bash -c "
+        pip install chainlit httpx &&
+        chainlit run chainlit_app.py --host 0.0.0.0 --port 8000
+      "
+    ports:
+      - "8000:8000"
+
+  seed:
+    # On réutilise l'image de l'API pour ne pas en builder une nouvelle
+    image: kpo237/cv-chatbot-api:latest
+    container_name: cv-chatbot-seed
+    # On écrase la commande par défaut pour lancer le script d'ingestion
+    command: python /code/app/ingest_data.py
+    environment:
+      # Ici on dit au script de taper sur le conteneur "api" via le réseau interne
+      API_URL: http://api:8001
+    depends_on:
+      # On attend que l'API soit lancée
+      - api
+    # Ce profil permet de ne pas le lancer tout le temps si on veut,
+    # mais pour ton cas, retire la ligne 'profiles' si tu veux qu'il se lance à chaque 'up'
+    # ou garde-le pour le lancer manuellement.
+    # Pour l'instant, ne mets pas de profil pour qu'il s'exécute au déploiement.
+
+# ========================================================================
+# VOLUMES
+# ========================================================================
+volumes:
+  postgres_data:
