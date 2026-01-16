@@ -1,13 +1,20 @@
 """
 Modèles SQLAlchemy pour le RAG
 
-Architecture à 2 tables:
+Architecture des tables:
 - datas: Données structurées pour Text-to-SQL (site web + requêtes SQL)
-- embeddings: Données vectorielles pour recherche sémantique
+- faq: Questions fréquentes
+- testimonials: Témoignages/commentaires des visiteurs
+- chat_sessions: Sessions de conversation du chatbot
 """
-from sqlalchemy import Integer, String, Column, JSON, Text, DateTime, func, Boolean
+from sqlalchemy import Integer, String, Column, JSON, Text, DateTime, func, Boolean, ForeignKey
 from sqlalchemy.dialects.postgresql import JSONB
-from backend.app.database import Base
+from sqlalchemy.orm import relationship
+
+try:
+    from app.database import Base
+except ImportError:
+    from database import Base
 
 
 class Datas(Base):
@@ -22,37 +29,36 @@ class Datas(Base):
     __tablename__ = 'datas'
 
     id = Column(Integer, primary_key=True, index=True)
-    corpus = Column(Text, nullable=False)  # Contenu textuel
-    category = Column(String(100), index=True)  # "experience", "competence", "formation", "projet"
-    extradatas = Column(JSON, default={})  # Métadonnées structurées
+    corpus = Column(Text, nullable=False)
+    category = Column(String(100), index=True)
+    extradatas = Column(JSON, default={})
     created_at = Column(DateTime, server_default=func.now())
 
-    # Exemples de extradatas:
-    # Pour experience: {"entreprise": "...", "date_debut": "...", "date_fin": "...", "technologies": [...]}
-    # Pour competence: {"niveau": 4, "type": "backend"}
-    # Pour projet: {"technologies": [...], "url_github": "...", "annee": 2024}
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "corpus": self.corpus,
+            "category": self.category,
+            "extradatas": self.extradatas or {},
+            "created_at": self.created_at.isoformat() if self.created_at else None
+        }
 
 
 class FAQ(Base):
     """
     Table FAQ - Questions fréquentes pour le portfolio
-
-    Utilisée pour:
-    - Affichage sur la page FAQ du site Django
-    - Matching des questions utilisateur dans le chatbot
-    - Analytics (compteur de vues)
     """
     __tablename__ = 'faq'
 
     id = Column(Integer, primary_key=True, index=True)
     question = Column(String(500), nullable=False)
     reponse = Column(Text, nullable=False)
-    variantes = Column(JSONB, default=[])  # ["Variante 1", "Variante 2", ...]
+    variantes = Column(JSONB, default=[])
     categorie = Column(String(50), nullable=False, index=True)
     icone = Column(String(10), default="❓")
     ordre_affichage = Column(Integer, default=0, index=True)
     est_active = Column(Boolean, default=True, index=True)
-    vues = Column(Integer, default=0)  # Compteur de vues
+    vues = Column(Integer, default=0)
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
@@ -60,7 +66,6 @@ class FAQ(Base):
         return f"<FAQ {self.id}: {self.question[:50]}...>"
 
     def to_dict(self):
-        """Sérialisation pour l'API"""
         return {
             "id": self.id,
             "question": self.question,
@@ -73,6 +78,123 @@ class FAQ(Base):
         }
 
     def increment_vues(self, db_session):
-        """Incrémente le compteur de vues"""
         self.vues += 1
         db_session.commit()
+
+
+class Testimonial(Base):
+    """
+    Table des témoignages/commentaires des visiteurs
+
+    Utilisée pour:
+    - Collecter les retours des recruteurs/visiteurs
+    - Affichage sur la page témoignages
+    - Modération avant publication
+    """
+    __tablename__ = 'testimonials'
+
+    id = Column(Integer, primary_key=True, index=True)
+    author_name = Column(String(100), nullable=False)
+    author_email = Column(String(255), nullable=False, index=True)
+    author_company = Column(String(200), nullable=True)
+    author_position = Column(String(200), nullable=True)
+    content = Column(Text, nullable=False)
+    rating = Column(Integer, default=5)  # Note de 1 à 5
+    is_approved = Column(Boolean, default=False, index=True)
+    is_featured = Column(Boolean, default=False)
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+
+    def __repr__(self):
+        return f"<Testimonial {self.id}: {self.author_name}>"
+
+    def to_dict(self, include_email=False):
+        data = {
+            "id": self.id,
+            "author_name": self.author_name,
+            "author_company": self.author_company,
+            "author_position": self.author_position,
+            "content": self.content,
+            "rating": self.rating,
+            "is_featured": self.is_featured,
+            "created_at": self.created_at.isoformat() if self.created_at else None
+        }
+        if include_email:
+            data["author_email"] = self.author_email
+            data["is_approved"] = self.is_approved
+        return data
+
+
+class ChatSession(Base):
+    """
+    Table des sessions de chat
+
+    Utilisée pour:
+    - Authentification légère des utilisateurs du chatbot
+    - Gestion des quotas de messages
+    - Persistance de l'historique de conversation
+    """
+    __tablename__ = 'chat_sessions'
+
+    id = Column(Integer, primary_key=True, index=True)
+    session_id = Column(String(100), unique=True, nullable=False, index=True)
+    email = Column(String(255), nullable=False, index=True)
+    quota_total = Column(Integer, default=50)
+    quota_used = Column(Integer, default=0)
+    is_active = Column(Boolean, default=True, index=True)
+    last_activity = Column(DateTime, server_default=func.now(), onupdate=func.now())
+    created_at = Column(DateTime, server_default=func.now())
+
+    # Relation avec les messages
+    messages = relationship("ChatMessage", back_populates="session", cascade="all, delete-orphan")
+
+    def __repr__(self):
+        return f"<ChatSession {self.session_id}: {self.email}>"
+
+    @property
+    def quota_remaining(self):
+        return max(0, self.quota_total - self.quota_used)
+
+    def to_dict(self, include_messages=False):
+        data = {
+            "session_id": self.session_id,
+            "email": self.email,
+            "quota_total": self.quota_total,
+            "quota_remaining": self.quota_remaining,
+            "is_active": self.is_active,
+            "created_at": self.created_at.isoformat() if self.created_at else None
+        }
+        if include_messages:
+            data["messages"] = [msg.to_dict() for msg in self.messages[-20:]]  # Last 20 messages
+        return data
+
+
+class ChatMessage(Base):
+    """
+    Table des messages de chat
+
+    Stocke l'historique des conversations pour chaque session
+    """
+    __tablename__ = 'chat_messages'
+
+    id = Column(Integer, primary_key=True, index=True)
+    session_id = Column(Integer, ForeignKey('chat_sessions.id', ondelete='CASCADE'), nullable=False, index=True)
+    role = Column(String(20), nullable=False)  # 'user' ou 'assistant'
+    content = Column(Text, nullable=False)
+    intent = Column(String(20), nullable=True)  # SQL, VECTOR, VECTOR_SQL, OFF_TOPIC
+    metadata = Column(JSON, default={})
+    created_at = Column(DateTime, server_default=func.now())
+
+    # Relation avec la session
+    session = relationship("ChatSession", back_populates="messages")
+
+    def __repr__(self):
+        return f"<ChatMessage {self.id}: {self.role}>"
+
+    def to_dict(self):
+        return {
+            "role": self.role,
+            "content": self.content,
+            "intent": self.intent,
+            "created_at": self.created_at.isoformat() if self.created_at else None
+        }

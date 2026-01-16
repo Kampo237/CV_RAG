@@ -1,17 +1,18 @@
 /* ==========================================
    CHATBOT WIDGET - JAVASCRIPT
-   Version simplifiée et robuste
+   Version 2.0 - Compatible avec l'API RAG
    ========================================== */
 
 (function() {
     'use strict';
 
-    console.log('[Chatbot] Script chargé');
+    console.log('[Chatbot] Script chargé v2.0');
 
     // ==========================================
     // Configuration
     // ==========================================
     var CONFIG = {
+        // Les endpoints passent par le proxy Django (même domaine = pas de CORS)
         API_BASE_URL: '',
         ENDPOINTS: {
             AUTH: '/api/chat/session',
@@ -20,10 +21,10 @@
         SESSION_KEY: 'jp_chat_session',
         SESSION_EXPIRY_DAYS: 30,
         DEFAULT_QUOTA: 50,
-        MIN_TIME_BETWEEN_MESSAGES: 2000,
+        MIN_TIME_BETWEEN_MESSAGES: 1500,
         MIN_MESSAGE_LENGTH: 2,
         MAX_MESSAGE_LENGTH: 500,
-        WELCOME_MESSAGE: "Bonjour ! Je suis l'assistant de Jordan. Je peux répondre à vos questions sur son parcours, ses compétences techniques et ses projets. Comment puis-je vous aider ?"
+        WELCOME_MESSAGE: "Bonjour ! Je suis l'assistant virtuel de Jordan. Je peux vous renseigner sur son parcours, ses compétences techniques et ses projets. Comment puis-je vous aider ?"
     };
 
     // ==========================================
@@ -44,9 +45,15 @@
     }
 
     function formatMessage(content) {
+        // Retirer les métadonnées si présentes
+        if (content.indexOf('__METADATA__') !== -1) {
+            content = content.split('__METADATA__')[0];
+        }
+
         return content
             .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
             .replace(/\*(.*?)\*/g, '<em>$1</em>')
+            .replace(/`(.*?)`/g, '<code>$1</code>')
             .replace(/\n/g, '<br>');
     }
 
@@ -123,7 +130,7 @@
     };
 
     // ==========================================
-    // Fallback Responses (quand API indisponible)
+    // Fallback Responses
     // ==========================================
     function getFallbackResponse(message) {
         var msg = message.toLowerCase();
@@ -134,13 +141,13 @@
         if (msg.indexOf('compétence') !== -1 || msg.indexOf('skill') !== -1 || msg.indexOf('technologie') !== -1) {
             return "Jordan maîtrise C# .NET 8, Python (Django/FastAPI), les systèmes RAG avec LangChain, Docker, AWS, et PostgreSQL. Il a aussi de l'expérience avec WPF et Unity.";
         }
-        if (msg.indexOf('projet') !== -1 || msg.indexOf('portfolio') !== -1 || msg.indexOf('réalisation') !== -1) {
-            return "Jordan a réalisé plusieurs projets :\n\n• CV Chatbot RAG - Chatbot intelligent avec architecture RAG\n• NOVA GAMES S2J - Plateforme e-commerce Django\n• RPG Companion App - Application mobile Unity";
+        if (msg.indexOf('projet') !== -1 || msg.indexOf('portfolio') !== -1) {
+            return "Jordan a réalisé plusieurs projets :\n\n• CV Chatbot RAG - Chatbot intelligent avec architecture RAG\n• NOVA GAMES S2J - Plateforme e-commerce Django\n• Gestionnaire de dépenses - Application WPF";
         }
-        if (msg.indexOf('étude') !== -1 || msg.indexOf('formation') !== -1 || msg.indexOf('cégep') !== -1 || msg.indexOf('hackathon') !== -1) {
+        if (msg.indexOf('étude') !== -1 || msg.indexOf('formation') !== -1 || msg.indexOf('cégep') !== -1) {
             return "Jordan est étudiant finissant en informatique au Cégep de Chicoutimi. Il a reçu une mention honorable au Hackathon UQAC 2025.";
         }
-        if (msg.indexOf('contact') !== -1 || msg.indexOf('email') !== -1 || msg.indexOf('stage') !== -1 || msg.indexOf('emploi') !== -1) {
+        if (msg.indexOf('contact') !== -1 || msg.indexOf('email') !== -1 || msg.indexOf('stage') !== -1) {
             return "Vous pouvez contacter Jordan à kampojordan237@gmail.com. Il est actuellement à la recherche d'un stage ou d'une première opportunité professionnelle.";
         }
         return "Je suis l'assistant de Jordan. Je peux vous renseigner sur son parcours, ses compétences et ses projets. Que souhaitez-vous savoir ?";
@@ -159,7 +166,6 @@
     ChatbotWidget.prototype.init = function() {
         log('Initialisation...');
 
-        // Récupérer les éléments
         this.elements = {
             widget: document.getElementById('chatbot-widget'),
             toggle: document.getElementById('chatbot-toggle'),
@@ -182,7 +188,6 @@
             resizeBtn: document.getElementById('chatbot-resize-btn'),
         };
 
-        // Vérifier éléments essentiels
         if (!this.elements.widget) {
             logError('Element chatbot-widget introuvable');
             return false;
@@ -193,13 +198,8 @@
         }
 
         log('Éléments trouvés, attachement des événements...');
-
-        // Attacher événements
         this.bindEvents();
-
-        // Vérifier session existante
         this.checkSession();
-
         log('Initialisation terminée avec succès');
         return true;
     };
@@ -207,17 +207,14 @@
     ChatbotWidget.prototype.bindEvents = function() {
         var self = this;
 
-        // Bouton toggle
         if (this.elements.toggle) {
             this.elements.toggle.addEventListener('click', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
-                log('Clic sur toggle');
                 self.toggleWindow();
             });
         }
 
-        // Bouton minimize (ferme le chat)
         if (this.elements.minimizeBtn) {
             this.elements.minimizeBtn.addEventListener('click', function(e) {
                 e.preventDefault();
@@ -225,7 +222,6 @@
             });
         }
 
-        // Bouton resize (agrandir/réduire)
         if (this.elements.resizeBtn) {
             this.elements.resizeBtn.addEventListener('click', function(e) {
                 e.preventDefault();
@@ -233,7 +229,6 @@
             });
         }
 
-        // Formulaire auth
         if (this.elements.authForm) {
             this.elements.authForm.addEventListener('submit', function(e) {
                 e.preventDefault();
@@ -241,14 +236,12 @@
             });
         }
 
-        // Input email
         if (this.elements.authEmail) {
             this.elements.authEmail.addEventListener('input', function() {
                 self.clearAuthError();
             });
         }
 
-        // Formulaire chat
         if (this.elements.inputForm) {
             this.elements.inputForm.addEventListener('submit', function(e) {
                 e.preventDefault();
@@ -256,7 +249,6 @@
             });
         }
 
-        // Textarea
         if (this.elements.textarea) {
             this.elements.textarea.addEventListener('input', function() {
                 self.handleTextareaChange();
@@ -286,7 +278,6 @@
             this.elements.badge.classList.add('hidden');
         }
 
-        // Focus
         var self = this;
         if (this.isOpen) {
             setTimeout(function() {
@@ -308,8 +299,6 @@
         }
 
         log('Toggle size: ' + (isExpanded ? 'agrandi' : 'normal'));
-
-        // Scroll to bottom après resize
         this.scrollToBottom();
     };
 
@@ -355,13 +344,11 @@
 
         log('Authentification: ' + email);
 
-        // Désactiver le bouton
         if (this.elements.authSubmit) {
             this.elements.authSubmit.disabled = true;
             this.elements.authSubmit.innerHTML = '<span class="chatbot-spinner"></span>';
         }
 
-        // Essayer l'API, sinon créer session locale
         this.authenticateAPI(email)
             .then(function(session) {
                 self.showChatInterface();
@@ -375,7 +362,6 @@
             })
             .catch(function(error) {
                 log('Auth API échouée, création session locale');
-                // Créer session locale en fallback
                 var localSession = Session.set({
                     id: 'local_' + Date.now(),
                     email: email,
@@ -458,11 +444,9 @@
         var value = this.elements.textarea.value;
         var length = value.length;
 
-        // Auto-resize
         this.elements.textarea.style.height = 'auto';
         this.elements.textarea.style.height = Math.min(this.elements.textarea.scrollHeight, 120) + 'px';
 
-        // Char count
         if (this.elements.charCount) {
             this.elements.charCount.textContent = length + '/' + CONFIG.MAX_MESSAGE_LENGTH;
             this.elements.charCount.classList.remove('warning', 'error');
@@ -473,7 +457,6 @@
             }
         }
 
-        // Enable/disable send
         if (this.elements.sendBtn) {
             this.elements.sendBtn.disabled = length < CONFIG.MIN_MESSAGE_LENGTH || this.isTyping;
         }
@@ -484,7 +467,6 @@
 
         var message = this.elements.textarea ? this.elements.textarea.value.trim() : '';
 
-        // Validation
         if (message.length < CONFIG.MIN_MESSAGE_LENGTH) {
             this.showWarning('Message trop court');
             return;
@@ -494,7 +476,6 @@
             return;
         }
 
-        // Rate limit
         var canSend = Session.canSendMessage();
         if (!canSend.allowed) {
             this.showWarning(canSend.reason);
@@ -503,20 +484,14 @@
 
         log('Envoi message: ' + message);
 
-        // Clear input
         if (this.elements.textarea) {
             this.elements.textarea.value = '';
             this.handleTextareaChange();
         }
 
-        // Add user message
         this.addUserMessage(message);
-
-        // Record
         Session.recordMessage();
         this.updateQuotaDisplay();
-
-        // Send to API
         this.sendToAPI(message);
     };
 
@@ -529,50 +504,31 @@
         fetch(CONFIG.API_BASE_URL + CONFIG.ENDPOINTS.CHAT, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
-                'X-Session-ID': session ? session.id : ''
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify({
                 message: message,
-                session_id: session ? session.id : ''
+                session_id: session ? session.id : 'anonymous'
             })
         })
         .then(function(response) {
             if (!response.ok) throw new Error('API error');
 
-            var contentType = response.headers.get('content-type') || '';
-
-            // SSE streaming
-            if (contentType.indexOf('text/event-stream') !== -1) {
-                return self.handleSSE(response);
-            }
-
-            // JSON response
-            return response.json().then(function(data) {
-                self.showTyping(false);
-                var text = data.response || data.message || '';
-                self.addBotMessage(text);
-
-                if (data.quota_remaining !== undefined) {
-                    Session.data.quotaRemaining = data.quota_remaining;
-                    Session.set(Session.data);
-                    self.updateQuotaDisplay();
-                }
-            });
+            // Handle streaming response
+            return self.handleStreamingResponse(response);
         })
         .catch(function(error) {
-            log('API error, using fallback');
+            log('API error, using fallback: ' + error);
             self.showTyping(false);
             var fallback = getFallbackResponse(message);
             self.addBotMessage(fallback);
         });
     };
 
-    ChatbotWidget.prototype.handleSSE = function(response) {
+    ChatbotWidget.prototype.handleStreamingResponse = function(response) {
         var self = this;
         var reader = response.body.getReader();
         var decoder = new TextDecoder();
-        var buffer = '';
         var fullResponse = '';
 
         this.showTyping(false);
@@ -582,34 +538,24 @@
         function read() {
             reader.read().then(function(result) {
                 if (result.done) {
+                    // Nettoyer les métadonnées de l'affichage final
+                    var cleanResponse = fullResponse.split('__METADATA__')[0];
+                    contentEl.innerHTML = formatMessage(cleanResponse);
+                    self.scrollToBottom();
                     return;
                 }
 
-                buffer += decoder.decode(result.value, { stream: true });
-                var lines = buffer.split('\n');
-                buffer = lines.pop() || '';
+                var chunk = decoder.decode(result.value, { stream: true });
+                fullResponse += chunk;
 
-                for (var i = 0; i < lines.length; i++) {
-                    var line = lines[i];
-                    if (line.indexOf('data: ') === 0) {
-                        var data = line.slice(6);
-                        if (data === '[DONE]') return;
-
-                        try {
-                            var parsed = JSON.parse(data);
-                            var chunk = parsed.content || parsed.text || parsed.delta || '';
-                            fullResponse += chunk;
-                            contentEl.innerHTML = formatMessage(fullResponse);
-                            self.scrollToBottom();
-                        } catch (e) {
-                            fullResponse += data;
-                            contentEl.innerHTML = formatMessage(fullResponse);
-                            self.scrollToBottom();
-                        }
-                    }
-                }
+                // Afficher seulement le contenu sans les métadonnées
+                var displayContent = fullResponse.split('__METADATA__')[0];
+                contentEl.innerHTML = formatMessage(displayContent);
+                self.scrollToBottom();
 
                 read();
+            }).catch(function(error) {
+                logError('Stream error: ' + error);
             });
         }
 
@@ -752,14 +698,12 @@
         }
     }
 
-    // Lancer quand DOM prêt
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initChatbot);
     } else {
         initChatbot();
     }
 
-    // Fallback
     window.addEventListener('load', function() {
         if (!window.chatbot) {
             log('Retry sur window.load...');

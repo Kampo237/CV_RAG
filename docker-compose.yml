@@ -1,11 +1,16 @@
+# ==============================================================================
+# CV RAG Portfolio - Docker Compose
+# Configuration pour déploiement avec BD AWS externe
+# ==============================================================================
+
 services:
-  # ========================================================================
-  # FASTAPI RAG API
-  # ========================================================================
+  # ============================================================================
+  # FASTAPI RAG API (Backend)
+  # ============================================================================
   api:
     build:
-      context: .
-      dockerfile: backend/Dockerfile
+      context: ./backend
+      dockerfile: Dockerfile
     image: kpo237/cv-chatbot-api:latest
     container_name: cv-chatbot-api
     restart: unless-stopped
@@ -13,33 +18,48 @@ services:
       - .env
     ports:
       - "8001:8001"
+    networks:
+      - cv-network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8001/"]
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 10s
 
-  # ========================================================================
-  # CHAINLIT UI
-  # ========================================================================
-  chainlit:
-    image: kpo237/cv-chatbot-api:latest
-    container_name: cv-chatbot-ui
+  # ============================================================================
+  # DJANGO FRONTEND (Portfolio)
+  # ============================================================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: kpo237/cv-portfolio-frontend:latest
+    container_name: cv-portfolio-frontend
     restart: unless-stopped
-    depends_on:
-      - api
-    working_dir: /backend/app
-    volumes:
-      - ./app/chainlit_app.py:/app/chainlit_app.py:ro
-      - ./.chainlit:/app/.chainlit
-      - ./chainlit_files:/app/.files
-      - ./app/chainlit.md:/app/chainlit.md:ro
-    environment:
-      API_BASE_URL: http://api:8001
-    command: >
-      bash -c "
-        pip install chainlit httpx &&
-        chainlit run chainlit_app.py --host 0.0.0.0 --port 8000
-      "
+    env_file:
+      - .env
     ports:
       - "8000:8000"
+    networks:
+      - cv-network
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      - API_BASE_URL=http://api:8001
+      - DJANGO_SETTINGS_MODULE=portfolio_project.settings
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+# ==============================================================================
+# NETWORKS
+# ==============================================================================
+networks:
+  cv-network:
+    driver: bridge
+    name: cv-portfolio-network
