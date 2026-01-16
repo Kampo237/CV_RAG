@@ -1,0 +1,560 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}CV – Jordan Pokam | Full Stack Developer {% endblock title %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/pages.css' %}">
+    <style>
+        /* CV Specific Print Styles */
+        @media print {
+            body {
+                background: white !important;
+                color: black !important;
+            }
+            .header, .footer, .cv-header, .cursor, .cursor-follower {
+                display: none !important;
+            }
+            .cv-page {
+                padding: 0 !important;
+            }
+            .cv-preview {
+                box-shadow: none !important;
+                padding: 40px !important;
+                max-width: 100% !important;
+            }
+        }
+
+        /* CV Preview Styles */
+        .cv-preview {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        .cv-name {
+            font-family: 'Syne', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 0.25rem;
+            letter-spacing: -0.5px;
+        }
+
+        .cv-title-role {
+            font-size: 1.25rem;
+            color: #00cc6a;
+            font-weight: 500;
+            margin-bottom: 1rem;
+        }
+
+        .cv-contact-info {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .cv-contact-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            color: #555;
+        }
+
+        .cv-contact-item svg {
+            width: 16px;
+            height: 16px;
+            color: #00cc6a;
+        }
+
+        .cv-contact-item a {
+            color: #333;
+            text-decoration: none;
+        }
+
+        .cv-contact-item a:hover {
+            color: #00cc6a;
+        }
+
+        .cv-summary {
+            background: #f8f9fa;
+            padding: 1.25rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            border-left: 3px solid #00cc6a;
+        }
+
+        .cv-summary p {
+            margin: 0;
+            color: #444;
+            line-height: 1.7;
+        }
+
+        .cv-section {
+            margin-bottom: 2rem;
+        }
+
+        .cv-section-title {
+            font-family: 'Syne', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #1a1a1a;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #00cc6a;
+            margin-bottom: 1rem;
+        }
+
+        .cv-entry {
+            margin-bottom: 1.25rem;
+        }
+
+        .cv-entry:last-child {
+            margin-bottom: 0;
+        }
+
+        .cv-entry-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.25rem;
+        }
+
+        .cv-entry-title {
+            font-weight: 600;
+            color: #1a1a1a;
+            font-size: 1rem;
+        }
+
+        .cv-entry-date {
+            font-size: 0.85rem;
+            color: #888;
+            white-space: nowrap;
+        }
+
+        .cv-entry-subtitle {
+            font-size: 0.95rem;
+            color: #00cc6a;
+            margin-bottom: 0.5rem;
+        }
+
+        .cv-entry-description {
+            font-size: 0.9rem;
+            color: #555;
+            line-height: 1.6;
+        }
+
+        .cv-entry ul {
+            margin: 0.5rem 0 0 0;
+            padding-left: 1.25rem;
+        }
+
+        .cv-entry li {
+            font-size: 0.9rem;
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 0.25rem;
+        }
+
+        .cv-skills-section {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+        }
+
+        .cv-skill-group h4 {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.5rem;
+        }
+
+        .cv-skill-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .cv-skill-tag {
+            padding: 0.25rem 0.75rem;
+            background: #f0f0f0;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            color: #444;
+        }
+
+        .cv-languages {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .cv-language-item {
+            font-size: 0.9rem;
+            color: #555;
+        }
+
+        .cv-language-item strong {
+            color: #1a1a1a;
+        }
+
+        .cv-awards {
+            background: #fffbeb;
+            padding: 1rem;
+            border-radius: 8px;
+            border-left: 3px solid #f59e0b;
+        }
+
+        .cv-award-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .cv-award-item span:first-child {
+            font-size: 1.25rem;
+        }
+
+        @media (max-width: 768px) {
+            .cv-skills-section {
+                grid-template-columns: 1fr;
+            }
+
+            .cv-contact-info {
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+
+            .cv-entry-header {
+                flex-direction: column;
+                gap: 0.25rem;
+            }
+
+            .cv-languages {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+        }
+    </style>
+{% endblock extra_css %}
+
+{% block content %}
+    <!-- CV Page -->
+    <section class="cv-page">
+        <div class="container">
+            <div class="cv-header">
+                <div class="cv-title-group">
+                    <h1>Curriculum Vitae</h1>
+                    <p>Dernière mise à jour : Janvier 2025</p>
+                </div>
+                <button class="cv-download-btn" id="download-cv">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                    </svg>
+                    <span>Télécharger PDF</span>
+                </button>
+            </div>
+            
+            <!-- CV Preview (PDF Content) -->
+            <div class="cv-preview" id="cv-content">
+                
+                <!-- Header -->
+                <header>
+                    <h1 class="cv-name">Yann Willy Jordan Pokam Teguia</h1>
+                    <p class="cv-title-role">Développeur Full Stack</p>
+                    
+                    <div class="cv-contact-info">
+                        <div class="cv-contact-item">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                                <circle cx="12" cy="10" r="3"/>
+                            </svg>
+                            <span>Chicoutimi, QC, Canada</span>
+                        </div>
+                        <div class="cv-contact-item">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                                <polyline points="22,6 12,13 2,6"/>
+                            </svg>
+                            <a href="mailto:kampojordan237@gmail.com">kampojordan237@gmail.com</a>
+                        </div>
+                        <div class="cv-contact-item">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <line x1="2" y1="12" x2="22" y2="12"/>
+                                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                            </svg>
+                            <a href="https://jordan-pokam.dev" target="_blank">jordan-pokam.dev</a>
+                        </div>
+                        <div class="cv-contact-item">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                            </svg>
+                            <a href="https://github.com/jordanpokam" target="_blank">github.com/jordanpokam</a>
+                        </div>
+                        <div class="cv-contact-item">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                            </svg>
+                            <a href="https://linkedin.com/in/jordanpokam" target="_blank">linkedin.com/in/jordanpokam</a>
+                        </div>
+                    </div>
+                </header>
+                
+                <!-- Summary -->
+                <div class="cv-summary">
+                    <p>
+                        Développeur Full Stack passionné avec une expertise en C# .NET, Python (Django/FastAPI) et 
+                        systèmes d'intelligence artificielle RAG. Étudiant en conception et développement d'applications 
+                        au Cégep de Chicoutimi, je combine rigueur technique et créativité pour créer des solutions 
+                        logicielles performantes et innovantes. Mention honorable au Hackathon UQAC 2025.
+                    </p>
+                </div>
+                
+                <!-- Distinctions -->
+                <div class="cv-section">
+                    <h2 class="cv-section-title">Distinctions</h2>
+                    <div class="cv-awards">
+                        <div class="cv-award-item">
+                            <span>🏆</span>
+                            <span><strong>Mention honorable</strong> – Hackathon UQAC 2025 – Développement d'une solution IA innovante en équipe</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Education -->
+                <div class="cv-section">
+                    <h2 class="cv-section-title">Formation</h2>
+                    
+                    <div class="cv-entry">
+                        <div class="cv-entry-header">
+                            <span class="cv-entry-title">DEC en Informatique – Conception et développement d'applications</span>
+                            <span class="cv-entry-date">2023 – Présent</span>
+                        </div>
+                        <div class="cv-entry-subtitle">Cégep de Chicoutimi, Québec</div>
+                        <ul>
+                            <li>Spécialisation en développement d'applications desktop et web</li>
+                            <li>Formation approfondie en programmation orientée objet, bases de données et méthodologies agiles</li>
+                            <li>Projets pratiques en C#, Python, et technologies web modernes</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- Technical Skills -->
+                <div class="cv-section">
+                    <h2 class="cv-section-title">Compétences techniques</h2>
+                    
+                    <div class="cv-skills-section">
+                        <div class="cv-skill-group">
+                            <h4>Langages de programmation</h4>
+                            <div class="cv-skill-tags">
+                                <span class="cv-skill-tag">C#</span>
+                                <span class="cv-skill-tag">Python</span>
+                                <span class="cv-skill-tag">JavaScript</span>
+                                <span class="cv-skill-tag">SQL</span>
+                                <span class="cv-skill-tag">HTML/CSS</span>
+                            </div>
+                        </div>
+                        
+                        <div class="cv-skill-group">
+                            <h4>Frameworks & Bibliothèques</h4>
+                            <div class="cv-skill-tags">
+                                <span class="cv-skill-tag">.NET 8 / WPF</span>
+                                <span class="cv-skill-tag">Django</span>
+                                <span class="cv-skill-tag">FastAPI</span>
+                                <span class="cv-skill-tag">LangChain</span>
+                                <span class="cv-skill-tag">Entity Framework</span>
+                            </div>
+                        </div>
+                        
+                        <div class="cv-skill-group">
+                            <h4>Bases de données</h4>
+                            <div class="cv-skill-tags">
+                                <span class="cv-skill-tag">PostgreSQL</span>
+                                <span class="cv-skill-tag">pgvector</span>
+                                <span class="cv-skill-tag">SQLite</span>
+                                <span class="cv-skill-tag">SQL Server</span>
+                            </div>
+                        </div>
+                        
+                        <div class="cv-skill-group">
+                            <h4>DevOps & Cloud</h4>
+                            <div class="cv-skill-tags">
+                                <span class="cv-skill-tag">Docker</span>
+                                <span class="cv-skill-tag">AWS (EC2, RDS)</span>
+                                <span class="cv-skill-tag">Git/GitHub</span>
+                                <span class="cv-skill-tag">Linux</span>
+                                <span class="cv-skill-tag">Caddy</span>
+                            </div>
+                        </div>
+                        
+                        <div class="cv-skill-group">
+                            <h4>IA & Machine Learning</h4>
+                            <div class="cv-skill-tags">
+                                <span class="cv-skill-tag">RAG Systems</span>
+                                <span class="cv-skill-tag">Claude API</span>
+                                <span class="cv-skill-tag">Voyage AI</span>
+                                <span class="cv-skill-tag">Embeddings</span>
+                                <span class="cv-skill-tag">Semantic Search</span>
+                            </div>
+                        </div>
+                        
+                        <div class="cv-skill-group">
+                            <h4>Méthodologies & Outils</h4>
+                            <div class="cv-skill-tags">
+                                <span class="cv-skill-tag">MVVM</span>
+                                <span class="cv-skill-tag">REST APIs</span>
+                                <span class="cv-skill-tag">Agile/Scrum</span>
+                                <span class="cv-skill-tag">VS Code</span>
+                                <span class="cv-skill-tag">Visual Studio</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Projects -->
+                <div class="cv-section">
+                    <h2 class="cv-section-title">Projets significatifs</h2>
+                    
+                    <div class="cv-entry">
+                        <div class="cv-entry-header">
+                            <span class="cv-entry-title">CV Chatbot RAG – Système de question-réponse intelligent</span>
+                            <span class="cv-entry-date">2024</span>
+                        </div>
+                        <div class="cv-entry-subtitle">FastAPI, LangChain, PostgreSQL/pgvector, Claude API, AWS</div>
+                        <ul>
+                            <li>Conception et développement d'un chatbot utilisant l'architecture RAG pour répondre aux questions sur mon parcours professionnel</li>
+                            <li>Implémentation d'un système de routage sémantique pour diriger les requêtes vers la stratégie optimale (recherche vectorielle, Text-to-SQL, ou hybride)</li>
+                            <li>Déploiement sur AWS avec EC2, RDS PostgreSQL et configuration SSL/HTTPS via Caddy</li>
+                            <li>Optimisation des coûts API par migration vers Claude Haiku (réduction de 60x)</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="cv-entry">
+                        <div class="cv-entry-header">
+                            <span class="cv-entry-title">NOVA GAMES S2J – Plateforme e-commerce</span>
+                            <span class="cv-entry-date">2024</span>
+                        </div>
+                        <div class="cv-entry-subtitle">Django, FastAPI, PostgreSQL, Docker, Google OAuth</div>
+                        <ul>
+                            <li>Développement d'une plateforme e-commerce complète pour la vente de jeux vidéo</li>
+                            <li>Intégration de l'authentification Google OAuth et système de gestion des employés</li>
+                            <li>Architecture multi-services avec Docker Compose orchestrant Django, FastAPI et PostgreSQL</li>
+                            <li>Intégration d'un chatbot IA pour l'assistance client (100% satisfaction)</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="cv-entry">
+                        <div class="cv-entry-header">
+                            <span class="cv-entry-title">RPG Companion App – Application mobile Unity</span>
+                            <span class="cv-entry-date">2024</span>
+                        </div>
+                        <div class="cv-entry-subtitle">Unity, C#, ASP.NET, REST API</div>
+                        <ul>
+                            <li>Création d'une application mobile compagnon pour un jeu RPG ASP.NET existant</li>
+                            <li>Développement de multiples scènes: connexion, quêtes, Pokédex, statistiques et classements</li>
+                            <li>Synchronisation en temps réel avec le serveur de jeu via API REST</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="cv-entry">
+                        <div class="cv-entry-header">
+                            <span class="cv-entry-title">WPF Project Manager – Application de gestion de projets</span>
+                            <span class="cv-entry-date">2024</span>
+                        </div>
+                        <div class="cv-entry-subtitle">WPF, C# .NET 8, MVVM, Entity Framework Core, Material Design</div>
+                        <ul>
+                            <li>Développement d'une application desktop de gestion de projets avec interface Material Design</li>
+                            <li>Architecture MVVM complète avec Entity Framework Core pour la persistance des données</li>
+                            <li>Fonctionnalités CRUD complètes pour la gestion des tâches et des projets</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- Languages -->
+                <div class="cv-section">
+                    <h2 class="cv-section-title">Langues</h2>
+                    <div class="cv-languages">
+                        <div class="cv-language-item">
+                            <strong>Français</strong> – Langue maternelle
+                        </div>
+                        <div class="cv-language-item">
+                            <strong>Anglais</strong> – Professionnel (lecture technique, documentation)
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Interests -->
+                <div class="cv-section">
+                    <h2 class="cv-section-title">Centres d'intérêt</h2>
+                    <p class="cv-entry-description">
+                        Développement de jeux vidéo • Intelligence artificielle et systèmes RAG • 
+                        Participation aux hackathons • Veille technologique • Apprentissage continu de nouvelles technologies
+                    </p>
+                </div>
+                
+            </div>
+        </div>
+    </section>
+{% endblock %}
+
+{% block extra_js %}
+    <script>
+        // PDF Download functionality
+        document.getElementById('download-cv').addEventListener('click', function() {
+            const element = document.getElementById('cv-content');
+            const button = this;
+            
+            // Update button state
+            button.innerHTML = `
+                <div class="spinner" style="width:20px;height:20px;border:2px solid transparent;border-top-color:currentColor;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+                <span>Génération...</span>
+            `;
+            button.disabled = true;
+            
+            const opt = {
+                margin: [10, 10, 10, 10],
+                filename: 'CV_Jordan_Pokam_2025.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { 
+                    scale: 2,
+                    useCORS: true,
+                    letterRendering: true
+                },
+                jsPDF: { 
+                    unit: 'mm', 
+                    format: 'a4', 
+                    orientation: 'portrait' 
+                },
+                pagebreak: { mode: 'avoid-all' }
+            };
+            
+            html2pdf().set(opt).from(element).save().then(() => {
+                // Reset button
+                button.innerHTML = `
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                    </svg>
+                    <span>Télécharger PDF</span>
+                `;
+                button.disabled = false;
+            }).catch(err => {
+                console.error('PDF generation error:', err);
+                button.innerHTML = `
+                    <span>Erreur - Réessayer</span>
+                `;
+                button.disabled = false;
+            });
+        });
+        
+        // Add spin animation
+        const style = document.createElement('style');
+        style.textContent = `@keyframes spin { to { transform: rotate(360deg); } }`;
+        document.head.appendChild(style);
+    </script>
+{% endblock extra_js %}
+

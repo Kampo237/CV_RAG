@@ -1,0 +1,418 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %} À propos – Jordan Pokam | Full Stack Developer {% endblock title %}
+
+{% block extra_css %} <link rel="stylesheet" href="{% static 'css/pages.css' %}">{% endblock extra_css %}
+
+
+{% block content %}
+    <!-- Page Hero -->
+    <section class="page-hero about-hero">
+        <div class="hero-background">
+            <div class="hero-gradient"></div>
+            <div class="hero-grid"></div>
+            <div class="hero-noise"></div>
+        </div>
+        
+        <div class="container">
+            <div class="about-hero-grid">
+                <div class="about-hero-content">
+                    <span class="section-tag">// À propos de moi</span>
+                    <h1 class="page-title">
+                        <span class="title-line">Yann Willy</span>
+                        <span class="title-line">Jordan</span>
+                        <span class="title-line highlight">Pokam Teguia</span>
+                    </h1>
+                    <p class="about-intro">
+                        Développeur Full Stack passionné de 22 ans, originaire du <strong>Cameroun</strong>
+                        et actuellement basé à <strong>Chicoutimi, Québec</strong>. Je transforme des idées
+                        complexes en solutions logicielles élégantes et performantes.
+                    </p>
+                    
+                    <div class="about-quick-facts">
+                        <div class="fact-item">
+                            <span class="fact-icon">📍</span>
+                            <span>Chicoutimi, QC</span>
+                        </div>
+                        <div class="fact-item">
+                            <span class="fact-icon">🎓</span>
+                            <span>Cégep de Chicoutimi</span>
+                        </div>
+                        <div class="fact-item">
+                            <span class="fact-icon">💼</span>
+                            <span>Full Stack Developer</span>
+                        </div>
+                    </div>
+                    
+                    <div class="about-cta-group">
+                        <a href="{% url 'portfolio_app:cv' %}" class="btn btn--primary">
+                            <span>Voir mon CV</span>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M7 17L17 7M17 7H7M17 7V17"/>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="about-hero-image">
+                    <div class="image-frame-about">
+                        <div class="image-decoration"></div>
+                        <img src="https://plus.unsplash.com/premium_photo-1678048604398-f42dda6997bd" alt="Jordan Pokam">
+                        <div class="image-badge">
+                            <span class="badge-emoji">🏆</span>
+                            <span class="badge-text">Hackathon UQAC 2025<br>Mention honorable</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Story Section -->
+    <section class="about-story">
+        <div class="container">
+            <div class="story-grid">
+                <div class="story-sidebar">
+                    <div class="sticky-nav">
+                        <span class="nav-label">Navigation</span>
+                        <a href="#parcours" class="story-nav-link active">Mon parcours</a>
+                        <a href="#passion" class="story-nav-link">Ma passion</a>
+                        <a href="#expertise" class="story-nav-link">Mon expertise</a>
+                        <a href="#valeurs" class="story-nav-link">Mes valeurs</a>
+                    </div>
+                </div>
+                
+                <div class="story-content">
+                    <!-- Parcours -->
+                    <div class="story-section" id="parcours">
+                        <h2 class="story-title">
+                            <span class="title-number">01</span>
+                            Mon parcours
+                        </h2>
+                        <div class="story-text">
+                            <p>
+                                Né au Cameroun, j'ai toujours été fasciné par la technologie et son potentiel 
+                                à transformer le monde. Cette passion m'a conduit à poursuivre mes études en 
+                                informatique au <strong>Cégep de Chicoutimi</strong>, où je me spécialise 
+                                actuellement en <strong>conception et développement d'applications</strong>.
+                            </p>
+                            <p>
+                                Mon parcours académique m'a permis de développer une solide expertise technique 
+                                tout en participant à des projets concrets. En Novembre 2025, j'ai eu l'honneur
+                                de recevoir une <strong>mention honorable au Hackathon UQAC</strong>, une 
+                                expérience qui a non seulement déclenché ma passion pour l'intelligence artificielle mais renforcé ma conviction que le travail d'équipe, la persévérance et l'innovation
+                                sont les clés du succès.
+                            </p>
+                        </div>
+                        
+                        <!-- Timeline -->
+                        <div class="timeline">
+                            <div class="timeline-item">
+                                <div class="timeline-marker"></div>
+                                <div class="timeline-content">
+                                    <span class="timeline-date">2025</span>
+                                    <h4>Hackathon UQAC - Mention honorable</h4>
+                                    <p>Développement d'une solution IA innovante en équipe</p>
+                                </div>
+                            </div>
+                            <div class="timeline-item">
+                                <div class="timeline-marker"></div>
+                                <div class="timeline-content">
+                                    <span class="timeline-date">2025</span>
+                                    <h4>CV Chatbot RAG - Projet personnel</h4>
+                                    <p>Création d'un chatbot intelligent avec architecture RAG déployé sur AWS</p>
+                                </div>
+                            </div>
+                            <div class="timeline-item">
+                                <div class="timeline-marker"></div>
+                                <div class="timeline-content">
+                                    <span class="timeline-date">2023</span>
+                                    <h4>Début au Cégep de Chicoutimi</h4>
+                                    <p>Spécialisation en conception et développement d'applications</p>
+                                </div>
+                            </div>
+                            <div class="timeline-item">
+                                <div class="timeline-marker"></div>
+                                <div class="timeline-content">
+                                    <span class="timeline-date">Cameroun</span>
+                                    <h4>Origines</h4>
+                                    <p>Naissance de la passion pour la technologie</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Passion -->
+                    <div class="story-section" id="passion">
+                        <h2 class="story-title">
+                            <span class="title-number">02</span>
+                            Ma passion
+                        </h2>
+                        <div class="story-text">
+                            <p>
+                                Le développement logiciel n'est pas seulement mon métier, c'est ma passion. 
+                                J'adore transformer des idées abstraites en solutions concrètes qui ont un 
+                                impact réel. Qu'il s'agisse de créer une application web élégante, de 
+                                développer un système backend robuste ou d'explorer les possibilités de 
+                                l'intelligence artificielle, chaque projet est une nouvelle aventure.
+                            </p>
+                            <p>
+                                Je suis particulièrement passionné par les <strong>systèmes d'IA et RAG</strong> 
+                                (Retrieval-Augmented Generation), qui permettent de créer des applications 
+                                intelligentes capables de comprendre et de répondre aux besoins des utilisateurs 
+                                de manière contextuelle et précise.
+                            </p>
+                        </div>
+                        
+                        <div class="passion-cards">
+                            <div class="passion-card">
+                                <span class="passion-icon">🎮</span>
+                                <h4>Game Development</h4>
+                                <p>Création d'expériences interactives avec Unity et C#</p>
+                            </div>
+                            <div class="passion-card">
+                                <span class="passion-icon">🤖</span>
+                                <h4>Intelligence Artificielle</h4>
+                                <p>Systèmes RAG, chatbots intelligents et embeddings</p>
+                            </div>
+                            <div class="passion-card">
+                                <span class="passion-icon">🌐</span>
+                                <h4>Web Development</h4>
+                                <p>Applications web modernes et performantes</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Expertise -->
+                    <div class="story-section" id="expertise">
+                        <h2 class="story-title">
+                            <span class="title-number">03</span>
+                            Mon expertise
+                        </h2>
+                        <div class="story-text">
+                            <p>
+                                Au fil de mes projets académiques et personnels, j'ai développé une certaine expertise
+                                technique diversifiée qui me permet d'aborder les défis sous différents angles lorsque j'y suis confronté.
+                            </p>
+                        </div>
+                        
+                        <div class="expertise-grid">
+                            <div class="expertise-category">
+                                <h4 class="expertise-title">
+                                    <span class="expertise-icon">💻</span>
+                                    Backend Development
+                                </h4>
+                                <div class="expertise-skills">
+                                    <div class="skill-bar">
+                                        <span class="skill-name">C# / .NET 8</span>
+                                        <div class="skill-progress" data-progress="90"></div>
+                                    </div>
+                                    <div class="skill-bar">
+                                        <span class="skill-name">Python / Django / FastAPI</span>
+                                        <div class="skill-progress" data-progress="85"></div>
+                                    </div>
+                                    <div class="skill-bar">
+                                        <span class="skill-name">PostgreSQL / pgvector</span>
+                                        <div class="skill-progress" data-progress="80"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="expertise-category">
+                                <h4 class="expertise-title">
+                                    <span class="expertise-icon">🎨</span>
+                                    Frontend Development
+                                </h4>
+                                <div class="expertise-skills">
+                                    <div class="skill-bar">
+                                        <span class="skill-name">HTML / CSS / JavaScript</span>
+                                        <div class="skill-progress" data-progress="85"></div>
+                                    </div>
+                                    <div class="skill-bar">
+                                        <span class="skill-name">React / Tailwind CSS</span>
+                                        <div class="skill-progress" data-progress="70"></div>
+                                    </div>
+                                    <div class="skill-bar">
+                                        <span class="skill-name">WPF / MVVM</span>
+                                        <div class="skill-progress" data-progress="85"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="expertise-category">
+                                <h4 class="expertise-title">
+                                    <span class="expertise-icon">🤖</span>
+                                    IA & Cloud
+                                </h4>
+                                <div class="expertise-skills">
+                                    <div class="skill-bar">
+                                        <span class="skill-name">LangChain / RAG Systems</span>
+                                        <div class="skill-progress" data-progress="70"></div>
+                                    </div>
+                                    <div class="skill-bar">
+                                        <span class="skill-name">Claude API / Embeddings</span>
+                                        <div class="skill-progress" data-progress="70"></div>
+                                    </div>
+                                    <div class="skill-bar">
+                                        <span class="skill-name">Docker / AWS</span>
+                                        <div class="skill-progress" data-progress="75"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Valeurs -->
+                    <div class="story-section" id="valeurs">
+                        <h2 class="story-title">
+                            <span class="title-number">04</span>
+                            Mes valeurs
+                        </h2>
+                        <div class="story-text">
+                            <p>
+                                Au-delà des compétences techniques, je crois que certaines valeurs sont 
+                                essentielles pour créer des solutions qui font vraiment la différence.
+                            </p>
+                        </div>
+                        
+                        <div class="values-grid">
+                            <div class="value-card">
+                                <div class="value-icon">🎯</div>
+                                <h4>Excellence</h4>
+                                <p>
+                                    Je m'efforce toujours de livrer un code propre, maintenable et bien 
+                                    documenté. La qualité n'est pas négociable.
+                                </p>
+                            </div>
+                            <div class="value-card">
+                                <div class="value-icon">🔄</div>
+                                <h4>Apprentissage continu</h4>
+                                <p>
+                                    La technologie évolue constamment, et j'embrasse cette évolution en 
+                                    apprenant continuellement de nouvelles compétences.
+                                </p>
+                            </div>
+                            <div class="value-card">
+                                <div class="value-icon">🤝</div>
+                                <h4>Collaboration</h4>
+                                <p>
+                                    Les meilleurs projets naissent de la collaboration. J'apprécie le 
+                                    travail d'équipe et la communication ouverte ainsi que les challenges.
+                                </p>
+                            </div>
+                            <div class="value-card">
+                                <div class="value-icon">💡</div>
+                                <h4>Innovation</h4>
+                                <p>
+                                    Je cherche toujours des solutions très créatives aux problèmes complexes,
+                                    en explorant de nouvelles technologies et approches.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Fun Facts Section -->
+    <section class="fun-facts">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">// Fun Facts</span>
+                <h2 class="section-title">En dehors du code</h2>
+            </div>
+            
+            <div class="fun-facts-grid">
+                <div class="fun-fact-card">
+                    <span class="fact-number">☕</span>
+                    <h4>Café & Code</h4>
+                    <p>ERREUR 404 !!! Le café n'a jamais été mon fort malheureusement.</p>
+                </div>
+                <div class="fun-fact-card">
+                    <span class="fact-number">🎵</span>
+                    <h4>Musique</h4>
+                    <p>Je code souvent en écoutant du rap ou de la musique urbaine française essentiellement</p>
+                </div>
+                <div class="fun-fact-card">
+                    <span class="fact-number">📚</span>
+                    <h4>Veille Tech</h4>
+                    <p>Je consacre du temps chaque mois à explorer de nouvelles technologies</p>
+                </div>
+                <div class="fun-fact-card">
+                    <span class="fact-number">🌍</span>
+                    <h4>Multiculturel</h4>
+                    <p>Mon parcours du Cameroun au Québec m'a ouvert à de nouvelles perspectives</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-about">
+        <div class="container">
+            <div class="cta-about-content">
+                <h2>Travaillons ensemble!</h2>
+                <p>
+                    Que vous ayez un projet en tête ou que vous souhaitiez simplement discuter, 
+                    n'hésitez pas à me contacter, je suis ouvert à une entrevue.
+                </p>
+                <div class="cta-about-buttons">
+                    <a href="mailto:kampojordan237@gmail.com" class="btn btn--glow">
+                        <span>M'engager ?!!</span>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M7 17L17 7M17 7H7M17 7V17"/>
+                        </svg>
+                    </a>
+                    <a href="{% url 'portfolio_app:cv' %}" class="btn btn--outline">
+                        <span>Télécharger mon CV</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+{% endblock %}
+
+{% block extra_js %}
+    <script>
+        // Skill bars animation
+        document.addEventListener('DOMContentLoaded', () => {
+            const skillBars = document.querySelectorAll('.skill-progress');
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const progress = entry.target.dataset.progress;
+                        entry.target.style.width = progress + '%';
+                    }
+                });
+            }, { threshold: 0.5 });
+
+            skillBars.forEach(bar => observer.observe(bar));
+
+            // Story navigation
+            const navLinks = document.querySelectorAll('.story-nav-link');
+            const sections = document.querySelectorAll('.story-section');
+
+            window.addEventListener('scroll', () => {
+                let current = '';
+
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop - 200;
+                    if (pageYOffset >= sectionTop) {
+                        current = section.getAttribute('id');
+                    }
+                });
+
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href') === '#' + current) {
+                        link.classList.add('active');
+                    }
+                });
+            });
+        });
+    </script>
+{% endblock extra_js %}

@@ -1,0 +1,1315 @@
+{% load static %}
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laisser un témoignage | Jordan Pokam</title>
+    <meta name="description" content="Partagez votre expérience de collaboration avec Jordan Pokam, développeur Full Stack.">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%2300ff88'/></svg>">
+
+    <style>
+        /* ==========================================
+           Reset & Base
+           ========================================== */
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: #0a0a0a;
+            color: #ffffff;
+            min-height: 100vh;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* ==========================================
+           Background Animation
+           ========================================== */
+        .bg-gradient {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background:
+                radial-gradient(ellipse at 20% 20%, rgba(0, 255, 136, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(0, 255, 136, 0.05) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(0, 255, 136, 0.03) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .grid-pattern {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image:
+                linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            background-size: 60px 60px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* ==========================================
+           Layout
+           ========================================== */
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 0 24px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ==========================================
+           Header
+           ========================================== */
+        .header {
+            padding: 24px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .logo-icon {
+            font-size: 20px;
+            font-weight: 700;
+            color: #00ff88;
+        }
+
+        .logo-text {
+            font-family: 'Syne', sans-serif;
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .back-link {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #666666;
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.2s ease;
+        }
+
+        .back-link:hover {
+            color: #00ff88;
+        }
+
+        .back-link svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        /* ==========================================
+           Main Content
+           ========================================== */
+        .main {
+            padding: 60px 0 100px;
+        }
+
+        /* ==========================================
+           Page Header
+           ========================================== */
+        .page-header {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+
+        .page-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid rgba(0, 255, 136, 0.2);
+            border-radius: 100px;
+            font-size: 13px;
+            color: #00ff88;
+            margin-bottom: 24px;
+        }
+
+        .page-badge svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .page-title {
+            font-family: 'Syne', sans-serif;
+            font-size: clamp(32px, 5vw, 48px);
+            font-weight: 700;
+            line-height: 1.2;
+            margin-bottom: 16px;
+        }
+
+        .page-title .highlight {
+            color: #00ff88;
+        }
+
+        .page-description {
+            font-size: 16px;
+            color: #888888;
+            max-width: 560px;
+            margin: 0 auto;
+            line-height: 1.7;
+        }
+
+        /* ==========================================
+           Form Card
+           ========================================== */
+        .form-card {
+            background: linear-gradient(180deg, #0f0f0f 0%, #0c0c0c 100%);
+            border: 1px solid #1a1a1a;
+            border-radius: 24px;
+            padding: 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .form-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(0, 255, 136, 0.3), transparent);
+        }
+
+        /* ==========================================
+           Form Sections
+           ========================================== */
+        .form-section {
+            margin-bottom: 32px;
+        }
+
+        .form-section:last-of-type {
+            margin-bottom: 0;
+        }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #00ff88;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, #252525, transparent);
+        }
+
+        .section-title svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        /* ==========================================
+           Form Grid
+           ========================================== */
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .form-grid .full-width {
+            grid-column: 1 / -1;
+        }
+
+        @media (max-width: 600px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* ==========================================
+           Form Fields
+           ========================================== */
+        .form-field {
+            position: relative;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: #a0a0a0;
+            margin-bottom: 8px;
+        }
+
+        .form-label .required {
+            color: #00ff88;
+            margin-left: 2px;
+        }
+
+        .form-label .optional {
+            color: #666666;
+            font-weight: 400;
+            margin-left: 4px;
+        }
+
+        .form-input,
+        .form-textarea {
+            width: 100%;
+            padding: 14px 16px;
+            background: #161616;
+            border: 1px solid #252525;
+            border-radius: 12px;
+            color: #ffffff;
+            font-size: 15px;
+            font-family: inherit;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        .form-input:hover,
+        .form-textarea:hover {
+            border-color: #333333;
+        }
+
+        .form-input:focus,
+        .form-textarea:focus {
+            border-color: #00ff88;
+            box-shadow: 0 0 0 3px rgba(0, 255, 136, 0.15);
+        }
+
+        .form-input::placeholder,
+        .form-textarea::placeholder {
+            color: #555555;
+        }
+
+        .form-input.error,
+        .form-textarea.error {
+            border-color: #ff6b6b;
+            box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.15);
+        }
+
+        .form-textarea {
+            min-height: 140px;
+            resize: vertical;
+            line-height: 1.6;
+        }
+
+        /* Input avec icône */
+        .input-with-icon {
+            position: relative;
+        }
+
+        .input-with-icon .form-input {
+            padding-left: 46px;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 18px;
+            height: 18px;
+            color: #555555;
+            pointer-events: none;
+            transition: color 0.2s ease;
+        }
+
+        .input-with-icon .form-input:focus + .input-icon {
+            color: #00ff88;
+        }
+
+        /* Error message */
+        .field-error {
+            font-size: 12px;
+            color: #ff6b6b;
+            margin-top: 6px;
+            display: none;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .field-error.visible {
+            display: flex;
+        }
+
+        .field-error svg {
+            width: 14px;
+            height: 14px;
+            flex-shrink: 0;
+        }
+
+        /* Character counter */
+        .char-counter {
+            position: absolute;
+            bottom: 12px;
+            right: 12px;
+            font-size: 11px;
+            color: #555555;
+            pointer-events: none;
+        }
+
+        .char-counter.warning {
+            color: #f59e0b;
+        }
+
+        .char-counter.error {
+            color: #ff6b6b;
+        }
+
+        /* ==========================================
+           Submit Section
+           ========================================== */
+        .submit-section {
+            margin-top: 36px;
+            padding-top: 32px;
+            border-top: 1px solid #1a1a1a;
+        }
+
+        .consent-checkbox {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .consent-checkbox input[type="checkbox"] {
+            display: none;
+        }
+
+        .checkbox-custom {
+            width: 22px;
+            height: 22px;
+            border: 2px solid #333333;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .checkbox-custom svg {
+            width: 14px;
+            height: 14px;
+            stroke: #0a0a0a;
+            opacity: 0;
+            transform: scale(0.5);
+            transition: all 0.2s ease;
+        }
+
+        .consent-checkbox input:checked + .checkbox-custom {
+            background: #00ff88;
+            border-color: #00ff88;
+        }
+
+        .consent-checkbox input:checked + .checkbox-custom svg {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .consent-checkbox input:focus + .checkbox-custom {
+            box-shadow: 0 0 0 3px rgba(0, 255, 136, 0.2);
+        }
+
+        .consent-text {
+            font-size: 13px;
+            color: #888888;
+            line-height: 1.6;
+        }
+
+        .consent-text a {
+            color: #00ff88;
+            text-decoration: none;
+        }
+
+        .consent-text a:hover {
+            text-decoration: underline;
+        }
+
+        /* Submit button */
+        .submit-btn {
+            width: 100%;
+            padding: 18px 32px;
+            background: linear-gradient(135deg, #00ff88, #00cc6a);
+            border: none;
+            border-radius: 14px;
+            color: #0a0a0a;
+            font-size: 16px;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .submit-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .submit-btn:hover::before {
+            left: 100%;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0, 255, 136, 0.3);
+        }
+
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+
+        .submit-btn:disabled {
+            background: #333333;
+            color: #666666;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .submit-btn svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        /* Loading state */
+        .submit-btn.loading .btn-text,
+        .submit-btn.loading .btn-icon {
+            opacity: 0;
+        }
+
+        .submit-btn .spinner {
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            border: 3px solid rgba(10, 10, 10, 0.3);
+            border-top-color: #0a0a0a;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            display: none;
+        }
+
+        .submit-btn.loading .spinner {
+            display: block;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* ==========================================
+           Success State
+           ========================================== */
+        .success-container {
+            display: none;
+            text-align: center;
+            padding: 60px 40px;
+        }
+
+        .success-container.visible {
+            display: block;
+            animation: fadeInUp 0.5s ease;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .success-icon {
+            width: 100px;
+            height: 100px;
+            margin: 0 auto 28px;
+            background: rgba(0, 255, 136, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .success-icon::before {
+            content: '';
+            position: absolute;
+            inset: -8px;
+            border: 2px solid rgba(0, 255, 136, 0.2);
+            border-radius: 50%;
+            animation: successPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes successPulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.5; }
+        }
+
+        .success-icon svg {
+            width: 48px;
+            height: 48px;
+            stroke: #00ff88;
+            stroke-width: 2;
+            animation: checkDraw 0.6s ease 0.2s both;
+        }
+
+        @keyframes checkDraw {
+            from {
+                stroke-dasharray: 100;
+                stroke-dashoffset: 100;
+            }
+            to {
+                stroke-dashoffset: 0;
+            }
+        }
+
+        .success-title {
+            font-family: 'Syne', sans-serif;
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .success-message {
+            font-size: 15px;
+            color: #888888;
+            margin-bottom: 36px;
+            line-height: 1.7;
+        }
+
+        .success-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .btn-primary,
+        .btn-secondary {
+            padding: 16px 28px;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: #00ff88;
+            border: none;
+            color: #0a0a0a;
+        }
+
+        .btn-primary:hover {
+            background: #00cc6a;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            border: 1px solid #333333;
+            color: #ffffff;
+        }
+
+        .btn-secondary:hover {
+            border-color: #00ff88;
+            color: #00ff88;
+        }
+
+        .btn-primary svg,
+        .btn-secondary svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        /* ==========================================
+           Footer
+           ========================================== */
+        .footer {
+            padding: 24px 0;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            text-align: center;
+        }
+
+        .footer p {
+            font-size: 13px;
+            color: #555555;
+        }
+
+        .footer a {
+            color: #00ff88;
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* ==========================================
+           Responsive
+           ========================================== */
+        @media (max-width: 600px) {
+            .form-card {
+                padding: 28px 20px;
+                border-radius: 20px;
+            }
+
+            .page-header {
+                margin-bottom: 36px;
+            }
+
+            .main {
+                padding: 40px 0 80px;
+            }
+        }
+
+        /* ==========================================
+           Animations
+           ========================================== */
+        .form-card,
+        .page-header {
+            animation: fadeIn 0.6s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .form-section {
+            animation: fadeIn 0.6s ease;
+            animation-fill-mode: both;
+        }
+
+        .form-section:nth-child(1) { animation-delay: 0.1s; }
+        .form-section:nth-child(2) { animation-delay: 0.2s; }
+        .form-section:nth-child(3) { animation-delay: 0.3s; }
+    </style>
+</head>
+<body>
+    <!-- Background -->
+    <div class="bg-gradient"></div>
+    <div class="grid-pattern"></div>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <a href="/" class="logo">
+                    <span class="logo-icon">&lt;/&gt;</span>
+                    <span class="logo-text">Jordan Pokam</span>
+                </a>
+                <a href="/" class="back-link">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M19 12H5M12 19l-7-7 7-7"/>
+                    </svg>
+                    Retour au portfolio
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main">
+        <div class="container">
+            <!-- Page Header -->
+            <div class="page-header">
+                <div class="page-badge">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    </svg>
+                    Témoignage
+                </div>
+                <h1 class="page-title">
+                    Partagez votre <span class="highlight">expérience</span>
+                </h1>
+                <p class="page-description">
+                    Votre témoignage est précieux. Si nous avons collaboré ensemble,
+                    n'hésitez pas à partager votre expérience pour aider d'autres
+                    personnes à mieux me connaître.
+                </p>
+            </div>
+
+            <!-- Form Card -->
+            <div class="form-card">
+                <!-- Form -->
+                <form id="testimonial-form" novalidate>
+                    <!-- Section: Informations personnelles -->
+                    <div class="form-section">
+                        <h3 class="section-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                <circle cx="12" cy="7" r="4"/>
+                            </svg>
+                            Informations personnelles
+                        </h3>
+                        <div class="form-grid">
+                            <div class="form-field">
+                                <label class="form-label" for="firstName">
+                                    Prénom <span class="required">*</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    id="firstName"
+                                    name="firstName"
+                                    class="form-input"
+                                    placeholder="Votre prénom"
+                                    required
+                                    autocomplete="given-name"
+                                >
+                                <span class="field-error" id="firstName-error">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="10"/>
+                                        <line x1="12" y1="8" x2="12" y2="12"/>
+                                        <line x1="12" y1="16" x2="12.01" y2="16"/>
+                                    </svg>
+                                    <span></span>
+                                </span>
+                            </div>
+
+                            <div class="form-field">
+                                <label class="form-label" for="lastName">
+                                    Nom <span class="required">*</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    id="lastName"
+                                    name="lastName"
+                                    class="form-input"
+                                    placeholder="Votre nom"
+                                    required
+                                    autocomplete="family-name"
+                                >
+                                <span class="field-error" id="lastName-error">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="10"/>
+                                        <line x1="12" y1="8" x2="12" y2="12"/>
+                                        <line x1="12" y1="16" x2="12.01" y2="16"/>
+                                    </svg>
+                                    <span></span>
+                                </span>
+                            </div>
+
+                            <div class="form-field full-width">
+                                <label class="form-label" for="email">
+                                    Adresse courriel <span class="required">*</span>
+                                </label>
+                                <div class="input-with-icon">
+                                    <input
+                                        type="email"
+                                        id="email"
+                                        name="email"
+                                        class="form-input"
+                                        placeholder="votre@email.com"
+                                        required
+                                        autocomplete="email"
+                                    >
+                                    <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                                        <polyline points="22,6 12,13 2,6"/>
+                                    </svg>
+                                </div>
+                                <span class="field-error" id="email-error">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="10"/>
+                                        <line x1="12" y1="8" x2="12" y2="12"/>
+                                        <line x1="12" y1="16" x2="12.01" y2="16"/>
+                                    </svg>
+                                    <span></span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section: Informations professionnelles -->
+                    <div class="form-section">
+                        <h3 class="section-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+                                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+                            </svg>
+                            Informations professionnelles
+                        </h3>
+                        <div class="form-grid">
+                            <div class="form-field">
+                                <label class="form-label" for="position">
+                                    Poste / Profession <span class="required">*</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    id="position"
+                                    name="position"
+                                    class="form-input"
+                                    placeholder="Ex: Développeur Senior"
+                                    required
+                                    autocomplete="organization-title"
+                                >
+                                <span class="field-error" id="position-error">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="10"/>
+                                        <line x1="12" y1="8" x2="12" y2="12"/>
+                                        <line x1="12" y1="16" x2="12.01" y2="16"/>
+                                    </svg>
+                                    <span></span>
+                                </span>
+                            </div>
+
+                            <div class="form-field">
+                                <label class="form-label" for="company">
+                                    Entreprise <span class="optional">(optionnel)</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    id="company"
+                                    name="company"
+                                    class="form-input"
+                                    placeholder="Ex: Acme Inc."
+                                    autocomplete="organization"
+                                >
+                            </div>
+
+                            <div class="form-field full-width">
+                                <label class="form-label" for="profileUrl">
+                                    LinkedIn ou Portfolio <span class="required">*</span>
+                                </label>
+                                <div class="input-with-icon">
+                                    <input
+                                        type="url"
+                                        id="profileUrl"
+                                        name="profileUrl"
+                                        class="form-input"
+                                        placeholder="https://linkedin.com/in/votre-profil"
+                                        required
+                                    >
+                                    <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                                    </svg>
+                                </div>
+                                <span class="field-error" id="profileUrl-error">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="10"/>
+                                        <line x1="12" y1="8" x2="12" y2="12"/>
+                                        <line x1="12" y1="16" x2="12.01" y2="16"/>
+                                    </svg>
+                                    <span></span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section: Votre témoignage -->
+                    <div class="form-section">
+                        <h3 class="section-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                            </svg>
+                            Votre témoignage
+                        </h3>
+                        <div class="form-field">
+                            <label class="form-label" for="testimonial">
+                                Partagez votre expérience <span class="required">*</span>
+                            </label>
+                            <div style="position: relative;">
+                                <textarea
+                                    id="testimonial"
+                                    name="testimonial"
+                                    class="form-textarea"
+                                    placeholder="Décrivez votre expérience de collaboration avec Jordan. Qu'avez-vous apprécié ? Quelles compétences avez-vous remarquées ?"
+                                    required
+                                    maxlength="1000"
+                                ></textarea>
+                                <span class="char-counter" id="char-counter">0/1000</span>
+                            </div>
+                            <span class="field-error" id="testimonial-error">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <line x1="12" y1="8" x2="12" y2="12"/>
+                                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                                </svg>
+                                <span></span>
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Submit Section -->
+                    <div class="submit-section">
+                        <label class="consent-checkbox">
+                            <input type="checkbox" id="consent" name="consent" required>
+                            <span class="checkbox-custom">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                    <polyline points="20 6 9 17 4 12"/>
+                                </svg>
+                            </span>
+                            <span class="consent-text">
+                                J'accepte que mon témoignage soit publié sur le portfolio de Jordan Pokam.
+                                Mon nom et ma profession seront visibles, mon email restera confidentiel.
+                            </span>
+                        </label>
+
+                        <button type="submit" class="submit-btn" id="submit-btn">
+                            <span class="btn-text">Envoyer mon témoignage</span>
+                            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="22" y1="2" x2="11" y2="13"/>
+                                <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                            </svg>
+                            <span class="spinner"></span>
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Success Message -->
+                <div class="success-container" id="success-container">
+                    <div class="success-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                            <polyline points="22 4 12 14.01 9 11.01"/>
+                        </svg>
+                    </div>
+                    <h2 class="success-title">Merci beaucoup !</h2>
+                    <p class="success-message">
+                        Votre témoignage a été envoyé avec succès.<br>
+                        Il sera examiné et publié prochainement sur mon portfolio.<br>
+                        Je vous remercie pour votre confiance et votre temps.
+                    </p>
+                    <div class="success-actions">
+                        <button type="button" class="btn-primary" id="new-testimonial-btn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"/>
+                                <line x1="5" y1="12" x2="19" y2="12"/>
+                            </svg>
+                            Soumettre un autre témoignage
+                        </button>
+                        <a href="/" class="btn-secondary">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                                <polyline points="9 22 9 12 15 12 15 22"/>
+                            </svg>
+                            Retour au portfolio
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 Jordan Pokam. Tous droits réservés. <a href="/">jordan-pokam.dev</a></p>
+        </div>
+    </footer>
+
+    <script>
+        /* ==========================================
+           Testimonial Form - JavaScript
+           ========================================== */
+        (function() {
+            'use strict';
+
+            // ==========================================
+            // Configuration
+            // ==========================================
+            var CONFIG = {
+                API_URL: '/api/testimonials',  // URL de l'API pour soumettre les témoignages
+                MIN_TESTIMONIAL_LENGTH: 50,
+                MAX_TESTIMONIAL_LENGTH: 1000
+            };
+
+            // ==========================================
+            // DOM Elements
+            // ==========================================
+            var form = document.getElementById('testimonial-form');
+            var submitBtn = document.getElementById('submit-btn');
+            var successContainer = document.getElementById('success-container');
+            var newTestimonialBtn = document.getElementById('new-testimonial-btn');
+            var charCounter = document.getElementById('char-counter');
+            var testimonialTextarea = document.getElementById('testimonial');
+
+            // ==========================================
+            // Validation Rules
+            // ==========================================
+            var validators = {
+                firstName: function(value) {
+                    if (!value.trim()) return 'Le prénom est requis';
+                    if (value.trim().length < 2) return 'Le prénom doit contenir au moins 2 caractères';
+                    return null;
+                },
+                lastName: function(value) {
+                    if (!value.trim()) return 'Le nom est requis';
+                    if (value.trim().length < 2) return 'Le nom doit contenir au moins 2 caractères';
+                    return null;
+                },
+                email: function(value) {
+                    if (!value.trim()) return 'L\'adresse courriel est requise';
+                    var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                    if (!emailRegex.test(value)) return 'Veuillez entrer une adresse courriel valide';
+                    return null;
+                },
+                position: function(value) {
+                    if (!value.trim()) return 'Le poste ou la profession est requis';
+                    if (value.trim().length < 2) return 'Veuillez préciser votre poste';
+                    return null;
+                },
+                profileUrl: function(value) {
+                    if (!value.trim()) return 'Le lien LinkedIn ou portfolio est requis';
+                    try {
+                        var url = new URL(value);
+                        if (!['http:', 'https:'].includes(url.protocol)) {
+                            return 'Veuillez entrer une URL valide (commençant par https://)';
+                        }
+                    } catch (e) {
+                        return 'Veuillez entrer une URL valide';
+                    }
+                    return null;
+                },
+                testimonial: function(value) {
+                    if (!value.trim()) return 'Le témoignage est requis';
+                    if (value.trim().length < CONFIG.MIN_TESTIMONIAL_LENGTH) {
+                        return 'Le témoignage doit contenir au moins ' + CONFIG.MIN_TESTIMONIAL_LENGTH + ' caractères';
+                    }
+                    if (value.trim().length > CONFIG.MAX_TESTIMONIAL_LENGTH) {
+                        return 'Le témoignage ne doit pas dépasser ' + CONFIG.MAX_TESTIMONIAL_LENGTH + ' caractères';
+                    }
+                    return null;
+                },
+                consent: function(checked) {
+                    if (!checked) return 'Vous devez accepter les conditions pour soumettre';
+                    return null;
+                }
+            };
+
+            // ==========================================
+            // Helper Functions
+            // ==========================================
+            function showFieldError(fieldId, message) {
+                var input = document.getElementById(fieldId);
+                var errorEl = document.getElementById(fieldId + '-error');
+
+                if (input) input.classList.add('error');
+                if (errorEl) {
+                    errorEl.querySelector('span').textContent = message;
+                    errorEl.classList.add('visible');
+                }
+            }
+
+            function clearFieldError(fieldId) {
+                var input = document.getElementById(fieldId);
+                var errorEl = document.getElementById(fieldId + '-error');
+
+                if (input) input.classList.remove('error');
+                if (errorEl) errorEl.classList.remove('visible');
+            }
+
+            function clearAllErrors() {
+                var errors = document.querySelectorAll('.field-error');
+                var inputs = document.querySelectorAll('.form-input, .form-textarea');
+
+                errors.forEach(function(el) { el.classList.remove('visible'); });
+                inputs.forEach(function(el) { el.classList.remove('error'); });
+            }
+
+            function setLoading(loading) {
+                submitBtn.classList.toggle('loading', loading);
+                submitBtn.disabled = loading;
+            }
+
+            function showSuccess() {
+                form.style.display = 'none';
+                successContainer.classList.add('visible');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+
+            function resetForm() {
+                form.reset();
+                form.style.display = 'block';
+                successContainer.classList.remove('visible');
+                clearAllErrors();
+                updateCharCounter();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+
+            function updateCharCounter() {
+                var length = testimonialTextarea.value.length;
+                charCounter.textContent = length + '/' + CONFIG.MAX_TESTIMONIAL_LENGTH;
+
+                charCounter.classList.remove('warning', 'error');
+                if (length > CONFIG.MAX_TESTIMONIAL_LENGTH * 0.9) {
+                    charCounter.classList.add('error');
+                } else if (length > CONFIG.MAX_TESTIMONIAL_LENGTH * 0.75) {
+                    charCounter.classList.add('warning');
+                }
+            }
+
+            // ==========================================
+            // Validation
+            // ==========================================
+            function validateForm() {
+                clearAllErrors();
+                var isValid = true;
+                var firstErrorField = null;
+
+                // Validate each field
+                var fields = ['firstName', 'lastName', 'email', 'position', 'profileUrl', 'testimonial'];
+
+                fields.forEach(function(fieldId) {
+                    var input = document.getElementById(fieldId);
+                    var error = validators[fieldId](input.value);
+
+                    if (error) {
+                        showFieldError(fieldId, error);
+                        isValid = false;
+                        if (!firstErrorField) firstErrorField = input;
+                    }
+                });
+
+                // Validate consent
+                var consentCheckbox = document.getElementById('consent');
+                var consentError = validators.consent(consentCheckbox.checked);
+                if (consentError) {
+                    alert(consentError);
+                    isValid = false;
+                }
+
+                // Focus first error field
+                if (firstErrorField) {
+                    firstErrorField.focus();
+                }
+
+                return isValid;
+            }
+
+            // ==========================================
+            // Form Submission
+            // ==========================================
+            async function submitForm(formData) {
+                var response = await fetch(CONFIG.API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                if (!response.ok) {
+                    var errorData = await response.json().catch(function() { return {}; });
+                    throw new Error(errorData.detail || errorData.message || 'Erreur lors de l\'envoi');
+                }
+
+                return response.json();
+            }
+
+            // ==========================================
+            // Event Listeners
+            // ==========================================
+
+            // Form submission
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+
+                if (!validateForm()) return;
+
+                setLoading(true);
+
+                var formData = {
+                    first_name: document.getElementById('firstName').value.trim(),
+                    last_name: document.getElementById('lastName').value.trim(),
+                    email: document.getElementById('email').value.trim(),
+                    position: document.getElementById('position').value.trim(),
+                    company: document.getElementById('company').value.trim() || null,
+                    profile_url: document.getElementById('profileUrl').value.trim(),
+                    content: document.getElementById('testimonial').value.trim()
+                };
+
+                try {
+                    await submitForm(formData);
+                    showSuccess();
+                } catch (error) {
+                    console.error('Submit error:', error);
+                    alert('Une erreur est survenue: ' + error.message + '\n\nVeuillez réessayer.');
+                } finally {
+                    setLoading(false);
+                }
+            });
+
+            // New testimonial button
+            newTestimonialBtn.addEventListener('click', function() {
+                resetForm();
+            });
+
+            // Character counter
+            testimonialTextarea.addEventListener('input', updateCharCounter);
+
+            // Clear errors on input
+            var inputFields = document.querySelectorAll('.form-input, .form-textarea');
+            inputFields.forEach(function(input) {
+                input.addEventListener('input', function() {
+                    clearFieldError(this.id);
+                });
+            });
+
+            // Initialize
+            updateCharCounter();
+
+        })();
+    </script>
+</body>
+</html>

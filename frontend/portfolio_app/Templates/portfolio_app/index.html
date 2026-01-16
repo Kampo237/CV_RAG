@@ -1,0 +1,559 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+
+    <!-- Hero Section -->
+    <section class="hero" id="hero">
+        <div class="hero-background">
+            <div class="hero-gradient"></div>
+            <div class="hero-grid"></div>
+            <div class="hero-noise"></div>
+        </div>
+
+        <div class="container hero-container">
+            <div class="hero-content">
+                <div class="hero-greeting">
+                    <span class="greeting-text">Hey,</span>
+                    <span class="greeting-wave">👋</span>
+                </div>
+                <h2 class="hero-subtitle">Je fais du développement full stack</h2>
+                <h1 class="hero-title">
+                    <span class="title-line">Jordan</span>
+                    <span class="title-line">Pokam</span>
+                </h1>
+
+                <div class="hero-scroll">
+                    <span>Faites défiler</span>
+                    <div class="scroll-line"></div>
+                </div>
+            </div>
+
+            <div class="hero-info">
+                <p class="hero-description">
+                    Étudiant finissant en informatique à Chicoutimi, je conçois des applications Full Stack avec C# .NET et Python, en explorant l'intelligence artificielle via les systèmes RAG.
+                    À la recherche d'un stage ou d'un premier emploi, j'apporte rigueur technique, curiosité et une vraie envie de contribuer à des projets concrets.
+                </p>
+
+                <div class="hero-contact">
+                    <div class="contact-item">
+                        <span class="contact-label">E</span>
+                        <a href="mailto:kampojordan237@gmail.com">kampojordan237@gmail.com</a>
+                    </div>
+                    <div class="contact-item">
+                        <span class="contact-label">W</span>
+                        <a href="https://jordan-pokam.dev" target="_blank">jordan-pokam.dev</a>
+                    </div>
+                </div>
+
+                <div class="hero-socials">
+                    <a href="https://github.com/Kampo237" target="_blank" class="social-link">
+                        <span class="social-slash">/</span>
+                        <span>GitHub</span>
+                    </a>
+                    <a href="https://www.linkedin.com/in/yann-willy-jordan-pokam-teguia-a1b77b363" target="_blank" class="social-link">
+                        <span class="social-slash">/</span>
+                        <span>LinkedIn</span>
+                    </a>
+                </div>
+            </div>
+
+            <div class="hero-image">
+                <div class="image-frame">
+                    <div class="image-glow"></div>
+                    <img src="https://plus.unsplash.com/premium_photo-1678048604398-f42dda6997bd" alt="Jordan Pokam" class="profile-img">
+                    <div class="image-overlay"></div>
+                </div>
+
+                <!-- Mon nom -->
+                <div class="name-marquee">
+                    <div class="marquee-track">
+                        <span>Yann </span>
+                        <span>•</span>
+                        <span>Willy</span>
+                        <span>•</span>
+                        <span>Jordan </span>
+                        <span>•</span>
+                        <span>Pokam</span>
+                        <span>•</span>
+                        <span>Teguia</span>
+                        <span>•</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Images décoratives flottantes -->
+        <div class="floating-images">
+            <div class="floating-img floating-img--1">
+                <img src="https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=200&h=300&fit=crop" alt="Code">
+            </div>
+            <div class="floating-img floating-img--2">
+                <img src="https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=150&h=200&fit=crop" alt="Laptop">
+            </div>
+        </div>
+    </section>
+
+    <!-- Skills -->
+    <section class="skills" id="skills">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">// Skills</span>
+            </div>
+
+            <div class="skills-grid">
+                <div class="skill-category" data-aos="fade-up">
+                    <h3 class="skill-title">Frontend</h3>
+                    <div class="skill-tags">
+                        <span class="skill-tag">HTML</span>
+                        <span class="skill-tag">CSS</span>
+                        <span class="skill-tag">JavaScript</span>
+                        <span class="skill-tag">Tailwind CSS</span>
+                    </div>
+                </div>
+
+                <div class="skill-category" data-aos="fade-up" data-aos-delay="100">
+                    <h3 class="skill-title">Backend</h3>
+                    <div class="skill-tags">
+                        <span class="skill-tag">ASP.NET</span>
+                        <span class="skill-tag">Python</span>
+                        <span class="skill-tag">Django</span>
+                        <span class="skill-tag">FastAPI</span>
+                        <span class="skill-tag">PostgreSQL</span>
+                    </div>
+                </div>
+
+                <div class="skill-category" data-aos="fade-up" data-aos-delay="200">
+                    <h3 class="skill-title">DevOps & Tools</h3>
+                    <div class="skill-tags">
+                        <span class="skill-tag">Git</span>
+                        <span class="skill-tag">Docker</span>
+                        <span class="skill-tag">AWS</span>
+                        <span class="skill-tag">Linux</span>
+                        <span class="skill-tag">CI/CD</span>
+                    </div>
+                </div>
+
+                <div class="skill-category" data-aos="fade-up" data-aos-delay="300">
+                    <h3 class="skill-title">IA & Data</h3>
+                    <div class="skill-tags">
+                        <span class="skill-tag">RAG Systems</span>
+                        <span class="skill-tag">LangChain</span>
+                        <span class="skill-tag">Claude API</span>
+                        <span class="skill-tag">OpenAI API</span>
+                        <span class="skill-tag">pgvector</span>
+                        <span class="skill-tag">Embeddings</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="skills-about">
+                <p class="about-text">
+                    Je m'épanouis en résolvant des problèmes concrets, en transformant des idées en code propre et maintenable,
+                    et en apprenant par l'expérimentation. Vous me trouverez en train de construire des projets personnels,
+                    de plonger dans de nouvelles technologies, ou simplement d'explorer ce qui vient ensuite dans le monde du développement de façon générale.
+                </p>
+                <a href="{% url 'portfolio_app:cv' %}" class="btn btn--outline">
+                    <span>Mon CV</span>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M7 17L17 7M17 7H7M17 7V17"/>
+                    </svg>
+                </a>
+            </div>
+
+            <div class="stats">
+                <div class="stat-item" data-aos="fade-up">
+                    <span class="stat-number" data-count="3">0</span>
+                    <span class="stat-suffix">+</span>
+                    <span class="stat-label">Années d'expérience</span>
+                </div>
+                <div class="stat-item" data-aos="fade-up" data-aos-delay="100">
+                    <span class="stat-number" data-count="15">0</span>
+                    <span class="stat-suffix">+</span>
+                    <span class="stat-label">Projets complétés</span>
+                </div>
+                <div class="stat-item" data-aos="fade-up" data-aos-delay="200">
+                    <span class="stat-number" data-count="100">0</span>
+                    <span class="stat-suffix">%</span>
+                    <span class="stat-label">Satisfaction client</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Projets -->
+    <section class="projects" id="projects">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">// Explorer mon travail</span>
+                <div class="section-title-row">
+                    <h2 class="section-title">Mes Projets Récents</h2>
+                    <div class="section-decoration">
+                        <span>&lt;/</span>
+                        <span>&gt;</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="projects-grid">
+                <!-- Project 1 -->
+                <article class="project-card" data-aos="fade-up">
+                    <div class="project-image">
+                        <img src="https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=800&h=600&fit=crop" alt="CV Chatbot RAG">
+                        <div class="project-overlay">
+                            <a href="#" class="project-link">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M7 17L17 7M17 7H7M17 7V17"/>
+                                </svg>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="project-content">
+                        <h3 class="project-title">CV Chatbot RAG</h3>
+                        <p class="project-description">
+                            Chatbot intelligent basé sur RAG pour répondre aux questions sur mon CV,
+                            avec recherche sémantique et génération de réponses contextuelles.
+                        </p>
+                        <div class="project-tags">
+                            <span>FastAPI</span>
+                            <span>LangChain</span>
+                            <span>PostgreSQL</span>
+                            <span>Claude API</span>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- Project 2 -->
+                <article class="project-card" data-aos="fade-up" data-aos-delay="100">
+                    <div class="project-image">
+                        <img src="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=800&h=600&fit=crop" alt="NOVA GAMES S2J">
+                        <div class="project-overlay">
+                            <a href="#" class="project-link">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M7 17L17 7M17 7H7M17 7V17"/>
+                                </svg>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="project-content">
+                        <h3 class="project-title">NOVA GAMES S2J</h3>
+                        <p class="project-description">
+                            Plateforme e-commerce complète pour jeux vidéo avec authentification Google OAuth,
+                            gestion des employés et chatbot IA intégré.
+                        </p>
+                        <div class="project-tags">
+                            <span>Django</span>
+                            <span>PostgreSQL</span>
+                            <span>Docker</span>
+                            <span>OAuth</span>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- Project 3 -->
+                <article class="project-card" data-aos="fade-up" data-aos-delay="200">
+                    <div class="project-image">
+                        <img src="https://images.unsplash.com/photo-1551650975-87deedd944c3?w=800&h=600&fit=crop" alt="RPG Companion App">
+                        <div class="project-overlay">
+                            <a href="#" class="project-link">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M7 17L17 7M17 7H7M17 7V17"/>
+                                </svg>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="project-content">
+                        <h3 class="project-title">RPG Companion App</h3>
+                        <p class="project-description">
+                            Application mobile Unity pour un jeu RPG ASP.NET avec quêtes,
+                            Pokédex, statistiques de personnages et classements.
+                        </p>
+                        <div class="project-tags">
+                            <span>Unity</span>
+                            <span>C#</span>
+                            <span>ASP.NET</span>
+                            <span>Mobile</span>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- Project 4 -->
+                <article class="project-card" data-aos="fade-up" data-aos-delay="300">
+                    <div class="project-image">
+                        <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&h=600&fit=crop" alt="WPF Project Manager">
+                        <div class="project-overlay">
+                            <a href="#" class="project-link">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M7 17L17 7M17 7H7M17 7V17"/>
+                                </svg>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="project-content">
+                        <h3 class="project-title">WPF Project Manager</h3>
+                        <p class="project-description">
+                            Système de gestion de projets desktop avec Material Design,
+                            architecture MVVM et Entity Framework Core.
+                        </p>
+                        <div class="project-tags">
+                            <span>WPF</span>
+                            <span>C# .NET 8</span>
+                            <span>MVVM</span>
+                            <span>EF Core</span>
+                        </div>
+                    </div>
+                </article>
+            </div>
+
+            <div class="projects-cta">
+                <a href="{% url 'portfolio_app:projets' %}" class="btn btn--primary">
+                    <span>Voir tous les projets</span>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M5 12h14M12 5l7 7-7 7"/>
+                    </svg>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Services proposés -->
+    <section class="services" id="services">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">// Mes services</span>
+                <div class="section-title-row">
+                    <h2 class="section-title">Services de Développement</h2>
+                    <div class="section-decoration">
+                        <span>&lt;/</span>
+                        <span>&gt;</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="services-grid">
+                <div class="service-card" data-aos="fade-up">
+                    <div class="service-image">
+                        <img src="https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=400&h=500&fit=crop" alt="Web Development">
+                    </div>
+                    <div class="service-content">
+                        <span class="service-number">(01)</span>
+                        <h3 class="service-title">Développement Web Personnalisé</h3>
+                        <p class="service-description">
+                            Applications web complètes du frontend au backend — optimisées pour la vitesse,
+                            la sécurité et l'évolutivité.
+                        </p>
+                        <a href="#contact" class="service-link">Me contacter</a>
+                    </div>
+                </div>
+
+                <div class="service-card" data-aos="fade-up" data-aos-delay="100">
+                    <div class="service-image">
+                        <img src="https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=400&h=500&fit=crop" alt="Frontend">
+                    </div>
+                    <div class="service-content">
+                        <span class="service-number">(02)</span>
+                        <h3 class="service-title">Ingénierie Frontend</h3>
+                        <p class="service-description">
+                            Interfaces utilisateur réactives et accessibles avec les dernières
+                            technologies et meilleures pratiques.
+                        </p>
+                        <a href="#contact" class="service-link">Me contacter</a>
+                    </div>
+                </div>
+
+                <div class="service-card" data-aos="fade-up" data-aos-delay="200">
+                    <div class="service-image">
+                        <img src="https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=400&h=500&fit=crop" alt="API Development">
+                    </div>
+                    <div class="service-content">
+                        <span class="service-number">(03)</span>
+                        <h3 class="service-title">Développement API & Backend</h3>
+                        <p class="service-description">
+                            APIs RESTful robustes, intégrations de bases de données et
+                            logique serveur performante.
+                        </p>
+                        <a href="#contact" class="service-link">Me contacter</a>
+                    </div>
+                </div>
+
+                <div class="service-card" data-aos="fade-up" data-aos-delay="300">
+                    <div class="service-image">
+                        <img src="https://images.unsplash.com/photo-1677442136019-21780ecad995?w=400&h=500&fit=crop" alt="AI Integration">
+                    </div>
+                    <div class="service-content">
+                        <span class="service-number">(04)</span>
+                        <h3 class="service-title">Intégration IA & RAG</h3>
+                        <p class="service-description">
+                            Chatbots intelligents, systèmes RAG, embeddings et intégration
+                            d'APIs LLM pour vos applications.
+                        </p>
+                        <a href="#contact" class="service-link">Me contacter</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Procédure de travail -->
+    <section class="process" id="process">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">// Process</span>
+                <div class="section-title-row">
+                    <h2 class="section-title">Mon Processus de Travail</h2>
+                    <div class="section-decoration">
+                        <span>&lt;/</span>
+                        <span>&gt;</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="process-steps">
+                <div class="process-step" data-aos="fade-up">
+                    <span class="step-number">01</span>
+                    <div class="step-content">
+                        <h3 class="step-title">Planifier & Architecturer</h3>
+                        <p class="step-description">
+                            Avant d'écrire une seule ligne de code, je comprends en profondeur les objectifs du projet,
+                            les besoins utilisateurs et les contraintes techniques.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="process-step" data-aos="fade-up" data-aos-delay="100">
+                    <span class="step-number">02</span>
+                    <div class="step-content">
+                        <h3 class="step-title">Construire & Développer</h3>
+                        <p class="step-description">
+                            Création d'interfaces pixel-perfect et de systèmes backend robustes en parallèle.
+                            Chaque composant est maintenable et évolutif.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="process-step" data-aos="fade-up" data-aos-delay="200">
+                    <span class="step-number">03</span>
+                    <div class="step-content">
+                        <h3 class="step-title">Lancer & Supporter</h3>
+                        <p class="step-description">
+                            Monitoring post-lancement, optimisation des performances et support continu
+                            pour faire évoluer votre produit.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Commentaires -->
+    <section class="testimonials" id="testimonials">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">// Commentaires / Références</span>
+                <div class="section-title-row">
+                    <h2 class="section-title">Ce que disent mes professeurs</h2>
+                    <div class="section-decoration">
+                        <span>&lt;/</span>
+                        <span>&gt;</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="testimonials-carousel">
+                <div class="testimonials-track">
+                    <!-- Testimonial 1 -->
+                    <div class="testimonial-card">
+                        <p class="testimonial-text">
+                            "Jordan a immédiatement compris nos objectifs produit et les a traduits en une
+                            expérience web magnifiquement optimisée. Son expertise technique et son esprit
+                            collaboratif ont rendu un projet complexe sans effort."
+                        </p>
+                        <div class="testimonial-author">
+                            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face" alt="Client">
+                            <div class="author-info">
+                                <span class="author-name">Carlos Méndez</span>
+                                <span class="author-role">Co-Fondateur de Launchly</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Testimonial 2 -->
+                    <div class="testimonial-card">
+                        <p class="testimonial-text">
+                            "Travailler avec Jordan a été un tournant pour notre refonte e-commerce.
+                            Il a non seulement livré du code évolutif et de haute qualité, mais a aussi
+                            apporté clarté et structure à l'ensemble du processus."
+                        </p>
+                        <div class="testimonial-author">
+                            <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=face" alt="Client">
+                            <div class="author-info">
+                                <span class="author-name">Sophie Lin</span>
+                                <span class="author-role">Head of Product, Drift & Bloom</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Testimonial 3 -->
+                    <div class="testimonial-card">
+                        <p class="testimonial-text">
+                            "Travailler avec Jordan a été l'une des meilleures décisions pour notre plateforme web.
+                            Il a compris notre vision, livré un code propre et évolutif, et communiqué clairement
+                            tout au long du projet."
+                        </p>
+                        <div class="testimonial-author">
+                            <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face" alt="Client">
+                            <div class="author-info">
+                                <span class="author-name">Ronald Richards</span>
+                                <span class="author-role">CEO, BankTech Inc.</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="carousel-nav">
+                    <button class="carousel-btn carousel-btn--prev" aria-label="Previous">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M19 12H5M12 19l-7-7 7-7"/>
+                        </svg>
+                    </button>
+                    <button class="carousel-btn carousel-btn--next" aria-label="Next">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M5 12h14M12 5l7 7-7 7"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Technos utilisées -->
+    <section class="clients">
+        <div class="marquee">
+            <div class="marquee-content">
+                <span class="tech-logo">Python</span>
+                <span class="tech-logo">Django</span>
+                <span class="tech-logo">FastAPI</span>
+                <span class="tech-logo">C#</span>
+                <span class="tech-logo">.NET</span>
+                <span class="tech-logo">PostgreSQL</span>
+                <span class="tech-logo">Docker</span>
+                <span class="tech-logo">AWS</span>
+                <span class="tech-logo">React</span>
+                <span class="tech-logo">LangChain</span>
+            </div>
+            <div class="marquee-content" aria-hidden="true">
+                <span class="tech-logo">Python</span>
+                <span class="tech-logo">Django</span>
+                <span class="tech-logo">FastAPI</span>
+                <span class="tech-logo">C#</span>
+                <span class="tech-logo">.NET</span>
+                <span class="tech-logo">PostgreSQL</span>
+                <span class="tech-logo">Docker</span>
+                <span class="tech-logo">AWS</span>
+                <span class="tech-logo">React</span>
+                <span class="tech-logo">LangChain</span>
+            </div>
+        </div>
+    </section>
+
+{% endblock %}

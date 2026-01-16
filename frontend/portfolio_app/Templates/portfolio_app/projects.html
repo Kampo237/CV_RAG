@@ -1,0 +1,439 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %} Projets – Jordan Pokam | Full Stack Developer {% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/pages.css' %}">
+{% endblock extra_css %}
+
+{% block content %}
+    <!-- Page Hero -->
+    <section class="page-hero">
+        <div class="hero-background">
+            <div class="hero-gradient"></div>
+            <div class="hero-grid"></div>
+            <div class="hero-noise"></div>
+        </div>
+        
+        <div class="container">
+            <div class="page-hero-content">
+                <span class="section-tag">// Mes Projets</span>
+                <h1 class="page-title">
+                    <span class="title-line">Portfolio</span>
+                    <span class="title-line highlight">Créatif</span>
+                </h1>
+                <p class="page-subtitle">
+                    Une sélection de mes réalisations les plus significatives en développement web, 
+                    applications natives et systèmes d'intelligence artificielle.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Filters -->
+    <section class="projects-filters">
+        <div class="container">
+            <div class="filters-wrapper">
+                <button class="filter-btn active" data-filter="all">Tous</button>
+                <button class="filter-btn" data-filter="web">Web Apps</button>
+                <button class="filter-btn" data-filter="desktop">Natives</button>
+                <button class="filter-btn" data-filter="ai">IA & RAG</button>
+                <button class="filter-btn" data-filter="mobile">Mobile</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Projects Grid -->
+    <section class="projects-page">
+        <div class="container">
+            <!-- La liste des projets chargés depuis la vue -->
+            <div class="projects-grid-full" id="projects-container">
+                
+                <!-- Project Template (for reference when adding from DB) -->
+                <!--
+                Structure JSON attendue depuis la BD:
+                {
+                    "id": "unique-id",
+                    "title": "Nom du projet",
+                    "description": "Description courte",
+                    "long_description": "Description détaillée",
+                    "image": "url-image.jpg",
+                    "category": "web|desktop|ai|mobile",
+                    "technologies": ["Tech1", "Tech2"],
+                    "github_url": "https://github.com/...",
+                    "live_url": "https://...",
+                    "date": "2024-01",
+                    "featured": true/false
+                }
+                -->
+
+                <!-- Project 1: CV Chatbot RAG -->
+                <article class="project-card-full" data-category="ai" data-aos="fade-up">
+                    <div class="project-image-wrapper">
+                        <img src="https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800&h=600&fit=crop" alt="CV Chatbot RAG" loading="lazy">
+                        <div class="project-overlay-full">
+                            <div class="project-links">
+                                <a href="https://github.com/" target="_blank" class="project-link-btn" title="Code source">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                                    </svg>
+                                </a>
+                                <a href="#" class="project-link-btn" title="Voir le projet">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"/>
+                                    </svg>
+                                </a>
+                            </div>
+                        </div>
+                        <span class="project-category-badge">IA & RAG</span>
+                    </div>
+                    <div class="project-content-full">
+                        <div class="project-meta">
+                            <span class="project-date">Décembre 2024</span>
+                            <span class="project-status status-live">En production</span>
+                        </div>
+                        <h3 class="project-title-full">CV Chatbot RAG</h3>
+                        <p class="project-description-full">
+                            Chatbot intelligent utilisant l'architecture RAG (Retrieval-Augmented Generation) 
+                            pour répondre aux questions sur mon parcours professionnel. Le système combine 
+                            recherche sémantique vectorielle, Text-to-SQL et reranking pour des réponses 
+                            précises et contextuelles.
+                        </p>
+                        <div class="project-features">
+                            <span class="feature-tag">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                                Recherche sémantique
+                            </span>
+                            <span class="feature-tag">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                                Text-to-SQL
+                            </span>
+                            <span class="feature-tag">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                                Streaming responses
+                            </span>
+                        </div>
+                        <div class="project-technologies">
+                            <span class="tech-tag">FastAPI</span>
+                            <span class="tech-tag">LangChain</span>
+                            <span class="tech-tag">PostgreSQL</span>
+                            <span class="tech-tag">pgvector</span>
+                            <span class="tech-tag">Claude API</span>
+                            <span class="tech-tag">Voyage AI</span>
+                            <span class="tech-tag">Docker</span>
+                            <span class="tech-tag">AWS</span>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- Project 2: NOVA GAMES S2J -->
+                <article class="project-card-full" data-category="web" data-aos="fade-up" data-aos-delay="100">
+                    <div class="project-image-wrapper">
+                        <img src="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=800&h=600&fit=crop" alt="NOVA GAMES S2J" loading="lazy">
+                        <div class="project-overlay-full">
+                            <div class="project-links">
+                                <a href="https://github.com/" target="_blank" class="project-link-btn" title="Code source">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                                    </svg>
+                                </a>
+                                <a href="#" class="project-link-btn" title="Voir le projet">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"/>
+                                    </svg>
+                                </a>
+                            </div>
+                        </div>
+                        <span class="project-category-badge">Web App</span>
+                    </div>
+                    <div class="project-content-full">
+                        <div class="project-meta">
+                            <span class="project-date">Novembre 2024</span>
+                            <span class="project-status status-live">En production</span>
+                        </div>
+                        <h3 class="project-title-full">NOVA GAMES S2J</h3>
+                        <p class="project-description-full">
+                            Plateforme e-commerce complète pour la vente de jeux vidéo avec système 
+                            d'authentification Google OAuth, gestion des employés, profils utilisateurs 
+                            et chatbot IA intégré. Architecture multi-services avec Docker Compose.
+                        </p>
+                        <div class="project-features">
+                            <span class="feature-tag">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                                100% satisfaction
+                            </span>
+                            <span class="feature-tag">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                                OAuth intégré
+                            </span>
+                            <span class="feature-tag">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                                Chatbot IA
+                            </span>
+                        </div>
+                        <div class="project-technologies">
+                            <span class="tech-tag">Django</span>
+                            <span class="tech-tag">FastAPI</span>
+                            <span class="tech-tag">PostgreSQL</span>
+                            <span class="tech-tag">Docker</span>
+                            <span class="tech-tag">Google OAuth</span>
+                            <span class="tech-tag">Bootstrap</span>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- Project 3: RPG Companion App -->
+                <article class="project-card-full" data-category="mobile" data-aos="fade-up" data-aos-delay="200">
+                    <div class="project-image-wrapper">
+                        <img src="https://images.unsplash.com/photo-1551650975-87deedd944c3?w=800&h=600&fit=crop" alt="RPG Companion App" loading="lazy">
+                        <div class="project-overlay-full">
+                            <div class="project-links">
+                                <a href="https://github.com/" target="_blank" class="project-link-btn" title="Code source">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                                    </svg>
+                                </a>
+                            </div>
+                        </div>
+                        <span class="project-category-badge">Mobile</span>
+                    </div>
+                    <div class="project-content-full">
+                        <div class="project-meta">
+                            <span class="project-date">Octobre 2024</span>
+                            <span class="project-status status-completed">Complété</span>
+                        </div>
+                        <h3 class="project-title-full">RPG Companion App</h3>
+                        <p class="project-description-full">
+                            Application mobile Unity servant de compagnon pour un jeu RPG ASP.NET existant. 
+                            Inclut plusieurs scènes: connexion, quêtes, Pokédex des créatures, statistiques 
+                            de personnages et classements en temps réel.
+                        </p>
+                        <div class="project-features">
+                            <span class="feature-tag">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                                Multi-scènes
+                            </span>
+                            <span class="feature-tag">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                                Sync temps réel
+                            </span>
+                            <span class="feature-tag">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                                API REST
+                            </span>
+                        </div>
+                        <div class="project-technologies">
+                            <span class="tech-tag">Unity</span>
+                            <span class="tech-tag">C#</span>
+                            <span class="tech-tag">ASP.NET</span>
+                            <span class="tech-tag">REST API</span>
+                            <span class="tech-tag">JSON</span>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- Project 4: WPF Project Manager -->
+                <article class="project-card-full" data-category="desktop" data-aos="fade-up" data-aos-delay="300">
+                    <div class="project-image-wrapper">
+                        <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&h=600&fit=crop" alt="WPF Project Manager" loading="lazy">
+                        <div class="project-overlay-full">
+                            <div class="project-links">
+                                <a href="https://github.com/" target="_blank" class="project-link-btn" title="Code source">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                                    </svg>
+                                </a>
+                            </div>
+                        </div>
+                        <span class="project-category-badge">Desktop</span>
+                    </div>
+                    <div class="project-content-full">
+                        <div class="project-meta">
+                            <span class="project-date">Septembre 2024</span>
+                            <span class="project-status status-completed">Complété</span>
+                        </div>
+                        <h3 class="project-title-full">WPF Project Manager</h3>
+                        <p class="project-description-full">
+                            Application desktop de gestion de projets développée avec WPF et l'architecture 
+                            MVVM. Interface Material Design moderne, gestion complète des tâches avec 
+                            Entity Framework Core pour la persistance des données.
+                        </p>
+                        <div class="project-features">
+                            <span class="feature-tag">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                                Material Design
+                            </span>
+                            <span class="feature-tag">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                                MVVM Pattern
+                            </span>
+                            <span class="feature-tag">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                                CRUD complet
+                            </span>
+                        </div>
+                        <div class="project-technologies">
+                            <span class="tech-tag">WPF</span>
+                            <span class="tech-tag">C# .NET 8</span>
+                            <span class="tech-tag">MVVM</span>
+                            <span class="tech-tag">Entity Framework</span>
+                            <span class="tech-tag">Material Design</span>
+                            <span class="tech-tag">SQLite</span>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- Project 5: Hackathon UQAC 2025 -->
+                <article class="project-card-full" data-category="ai" data-aos="fade-up">
+                    <div class="project-image-wrapper">
+                        <img src="https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=800&h=600&fit=crop" alt="Hackathon UQAC 2025" loading="lazy">
+                        <div class="project-overlay-full">
+                            <div class="project-links">
+                                <a href="https://github.com/" target="_blank" class="project-link-btn" title="Code source">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                                    </svg>
+                                </a>
+                            </div>
+                        </div>
+                        <span class="project-category-badge">IA & RAG</span>
+                        <span class="project-award">🏆 Mention honorable</span>
+                    </div>
+                    <div class="project-content-full">
+                        <div class="project-meta">
+                            <span class="project-date">Janvier 2025</span>
+                            <span class="project-status status-award">Récompensé</span>
+                        </div>
+                        <h3 class="project-title-full">Hackathon UQAC 2025</h3>
+                        <p class="project-description-full">
+                            Projet développé lors du Hackathon UQAC 2025, ayant reçu une mention honorable. 
+                            Solution innovante intégrant des technologies d'intelligence artificielle 
+                            pour résoudre un défi concret en équipe.
+                        </p>
+                        <div class="project-features">
+                            <span class="feature-tag">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                                Mention honorable
+                            </span>
+                            <span class="feature-tag">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                                Travail d'équipe
+                            </span>
+                            <span class="feature-tag">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                                48h chrono
+                            </span>
+                        </div>
+                        <div class="project-technologies">
+                            <span class="tech-tag">Python</span>
+                            <span class="tech-tag">IA/ML</span>
+                            <span class="tech-tag">API</span>
+                            <span class="tech-tag">Agile</span>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- Project 6: Invoice Generator -->
+                <article class="project-card-full" data-category="desktop" data-aos="fade-up" data-aos-delay="100">
+                    <div class="project-image-wrapper">
+                        <img src="https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=800&h=600&fit=crop" alt="Invoice Generator" loading="lazy">
+                        <div class="project-overlay-full">
+                            <div class="project-links">
+                                <a href="https://github.com/" target="_blank" class="project-link-btn" title="Code source">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                                    </svg>
+                                </a>
+                            </div>
+                        </div>
+                        <span class="project-category-badge">Desktop</span>
+                    </div>
+                    <div class="project-content-full">
+                        <div class="project-meta">
+                            <span class="project-date">Décembre 2024</span>
+                            <span class="project-status status-completed">Complété</span>
+                        </div>
+                        <h3 class="project-title-full">Professional Invoice Generator</h3>
+                        <p class="project-description-full">
+                            Système de facturation professionnel générant des PDF formatés avec ReportLab. 
+                            Support multi-pages, calculs automatiques, mise en page professionnelle et 
+                            gestion des informations client/fournisseur.
+                        </p>
+                        <div class="project-features">
+                            <span class="feature-tag">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                                PDF professionnel
+                            </span>
+                            <span class="feature-tag">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                                Multi-pages
+                            </span>
+                            <span class="feature-tag">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                                Calculs auto
+                            </span>
+                        </div>
+                        <div class="project-technologies">
+                            <span class="tech-tag">Python</span>
+                            <span class="tech-tag">ReportLab</span>
+                            <span class="tech-tag">PDF</span>
+                        </div>
+                    </div>
+                </article>
+
+            </div>
+
+            <!-- Load More Button -->
+            <div class="load-more-wrapper">
+                <button class="btn btn--outline" id="load-more-btn">
+                    <span>Charger plus de projets</span>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 5v14M5 12l7 7 7-7"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </section>
+
+{% endblock %}
+
+
+{% block extra_js %}
+    <script src="{% static 'js/projects.js' %}"></script>
+{% endblock extra_js %}

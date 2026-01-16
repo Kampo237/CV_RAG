@@ -1,0 +1,300 @@
+{% load static %}
+
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Jordan Pokam – Full Stack Developer Portfolio{% endblock %}</title>
+    <meta name="description" content="Portfolio de Jordan Pokam, développeur Full Stack spécialisé en C#, Python, Django, et systèmes IA/RAG.">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Syne:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <link rel="stylesheet" href="{% static 'css/chatbot.css' %}">
+    {% block extra_css %}{% endblock %}
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%2300ff00'/></svg>">
+</head>
+<body>
+    <!-- Cursor personnalisé -->
+    <div class="cursor"></div>
+    <div class="cursor-follower"></div>
+
+    <!-- Header -->
+    <header class="header">
+        <nav class="nav container">
+            <a href="{% url 'portfolio_app:home'%}" class="logo">
+                <span class="logo-icon">&lt;/&gt;</span>
+                <span class="logo-text">Jordan</span>
+            </a>
+
+            <button class="nav-toggle" aria-label="Toggle menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+
+            <ul class="nav-menu">
+                <li><a href="{% url 'portfolio_app:about' %}" class="nav-link">À propos</a></li>
+                <li><a href="{% url 'portfolio_app:home' %}#skills" class="nav-link">Compétences</a></li>
+                <li><a href="{% url 'portfolio_app:home' %}#projects" class="nav-link">Projets</a></li>
+                <li><a href="{% url 'portfolio_app:home' %}#services" class="nav-link">Services</a></li>
+                <li><a href="{% url 'portfolio_app:cv' %}" class="nav-link">CV</a></li>
+                <li><a href="{% url 'portfolio_app:cv' %}#contact" class="nav-link nav-link--cta">Me contacter</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="main">
+
+      {% if messages %}
+          <div class="messages-wrapper py-3" data-aos="fade-down" data-aos-delay="50">
+            {% for message in messages %}
+              <div class="alert-message alert-{{ message.tags }}">
+                <span class="alert-icon">
+                  {% if 'success' in message.tags %}
+                    <i class="bi bi-check-circle"></i>
+                  {% elif 'error' in message.tags or 'danger' in message.tags %}
+                    <i class="bi bi-exclamation-triangle"></i>
+                  {% elif 'warning' in message.tags %}
+                    <i class="bi bi-exclamation-circle"></i>
+                  {% else %}
+                    <i class="bi bi-info-circle"></i>
+                  {% endif %}
+                </span>
+                <span class="alert-text">
+                  {{ message }}
+                </span>
+                <button type="button" class="alert-close" onclick="this.parentElement.remove()">
+                  <i class="bi bi-x-lg"></i>
+                </button>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+
+    {% block content %}
+    {% endblock %}
+
+  </main>
+
+    <!-- CTA Section -->
+    <section class="cta" id="contact">
+        <div class="cta-background">
+            <img src="https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1920&h=600&fit=crop" alt="Background">
+            <div class="cta-overlay"></div>
+        </div>
+
+        <div class="container cta-container">
+            <h2 class="cta-title">
+                <span>Êtes-vous prêts à commencer une nouvelle </span>
+                <span class="cta-highlight">aventure</span>
+                <span>avec Moi ?</span>
+            </h2>
+            <a href="mailto:kampojordan237@gmail.com" class="btn btn--glow">
+                <span>Contactez-moi !</span>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M7 17L17 7M17 7H7M17 7V17"/>
+                </svg>
+            </a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <a href="#" class="logo">
+                        <span class="logo-icon">&lt;/&gt;</span>
+                        <span class="logo-text">Jordan Pokam</span>
+                    </a>
+                    <div class="footer-contact">
+                        <a href="mailto:kampojordan237@gmail.com" class="footer-email">kampojordan237@gmail.com</a>
+                        <span class="footer-location">Chicoutimi, Québec, Canada</span>
+                    </div>
+                </div>
+
+                <div class="footer-links">
+                    <h4>Navigation</h4>
+                    <ul>
+                        <li><a href="{% url 'portfolio_app:home' %}#hero">Accueil</a></li>
+                        <li><a href="{% url 'portfolio_app:about' %}">À propos</a></li>
+                        <li><a href="{% url 'portfolio_app:home' %}#projects">Projets</a></li>
+                        <li><a href="{% url 'portfolio_app:home' %}#contact">Contact</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-links">
+                    <h4>Portfolio</h4>
+                    <ul>
+                        <li><a href="https://github.com/Kampo237" target="_blank">GitHub</a></li>
+                        <li><a href="https://www.linkedin.com/in/yann-willy-jordan-pokam-teguia-a1b77b363" target="_blank">LinkedIn</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-links">
+                    <h4>Social</h4>
+                    <ul>
+                        <li><a href="https://www.instagram.com/" target="_blank">Instagram</a></li>
+                        <li><a href="https://twitter.com/" target="_blank">Twitter (X)</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <div class="footer-decoration">
+                    <span>&lt;/</span>
+                    <span>&gt;</span>
+                </div>
+                <p>&copy; 2025 Jordan Pokam. Tous droits réservés.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- AI Chatbot Widget -->
+    <div class="chatbot-widget" id="chatbot-widget">
+        <!-- Toggle Button -->
+        <button class="chatbot-toggle" id="chatbot-toggle" aria-label="Ouvrir le chat">
+            <span class="toggle-icon icon-chat">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+            </span>
+            <span class="toggle-icon icon-close">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </span>
+            <span class="chatbot-badge" id="chatbot-badge">1</span>
+        </button>
+
+        <!-- Chat Window -->
+        <div class="chatbot-window" id="chatbot-window">
+            <!-- Header -->
+            <header class="chatbot-header">
+                <div class="chatbot-header-info">
+                    <div class="chatbot-avatar">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                        </svg>
+                        <span class="chatbot-status-dot"></span>
+                    </div>
+                    <div class="chatbot-header-text">
+                        <h4>Assistant Jordan</h4>
+                        <span>En ligne</span>
+                    </div>
+                </div>
+                <div class="chatbot-header-actions">
+                    <button class="chatbot-header-btn" id="chatbot-resize-btn" title="Agrandir">
+                        <svg class="icon-expand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="15 3 21 3 21 9"/>
+                            <polyline points="9 21 3 21 3 15"/>
+                            <line x1="21" y1="3" x2="14" y2="10"/>
+                            <line x1="3" y1="21" x2="10" y2="14"/>
+                        </svg>
+                        <svg class="icon-collapse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="4 14 10 14 10 20"/>
+                            <polyline points="20 10 14 10 14 4"/>
+                            <line x1="14" y1="10" x2="21" y2="3"/>
+                            <line x1="3" y1="21" x2="10" y2="14"/>
+                        </svg>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Auth Screen -->
+            <div class="chatbot-auth" id="chatbot-auth">
+                <div class="chatbot-auth-content">
+                    <div class="chatbot-auth-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                            <circle cx="12" cy="7" r="4"/>
+                        </svg>
+                    </div>
+                    <h3>Commencer la conversation</h3>
+                    <p>Entrez votre email pour accéder à l'assistant et recevoir des réponses personnalisées.</p>
+                    <form class="chatbot-auth-form" id="chatbot-auth-form">
+                        <input
+                            type="email"
+                            class="chatbot-auth-input"
+                            id="chatbot-auth-email"
+                            placeholder="votre@email.com"
+                            required
+                            autocomplete="email"
+                        >
+                        <span class="chatbot-auth-error" id="chatbot-auth-error"></span>
+                        <button type="submit" class="chatbot-auth-submit" id="chatbot-auth-submit">
+                            <span>Commencer</span>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M5 12h14M12 5l7 7-7 7"/>
+                            </svg>
+                        </button>
+                    </form>
+                    <div class="chatbot-auth-footer">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                        </svg>
+                        <span>Vos données restent confidentielles</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Messages Container -->
+            <div class="chatbot-messages hidden" id="chatbot-messages">
+                <!-- Messages will be inserted dynamically -->
+            </div>
+
+            <!-- Typing Indicator -->
+            <div class="chatbot-typing" id="chatbot-typing">
+                <div class="chatbot-typing-avatar">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    </svg>
+                </div>
+                <div class="chatbot-typing-dots">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+
+            <!-- Input Area -->
+            <div class="chatbot-input-area hidden" id="chatbot-input-area">
+                <div class="chatbot-warning" id="chatbot-warning"></div>
+                <form class="chatbot-input-form" id="chatbot-input-form">
+                    <textarea
+                        class="chatbot-textarea"
+                        id="chatbot-textarea"
+                        placeholder="Posez votre question..."
+                        rows="1"
+                        maxlength="500"
+                    ></textarea>
+                    <button type="submit" class="chatbot-send-btn" id="chatbot-send-btn" disabled>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="22" y1="2" x2="11" y2="13"/>
+                            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                        </svg>
+                    </button>
+                </form>
+                <div class="chatbot-input-footer">
+                    <span class="chatbot-char-count" id="chatbot-char-count">0/500</span>
+                    <span class="chatbot-quota-count" id="chatbot-quota-count">-- questions restantes</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="{% static 'js/script.js' %}"></script>
+    <script src="{% static 'js/chatbot.js' %}"></script>
+    <script src="{% static 'js/chatbot-actions.js' %}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
