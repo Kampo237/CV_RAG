@@ -928,7 +928,7 @@
 
                             <div class="form-field full-width">
                                 <label class="form-label" for="profileUrl">
-                                    LinkedIn ou Portfolio <span class="required">*</span>
+                                    LinkedIn ou Portfolio <span class="optional">(optionnel)</span>
                                 </label>
                                 <div class="input-with-icon">
                                     <input
@@ -937,7 +937,6 @@
                                         name="profileUrl"
                                         class="form-input"
                                         placeholder="https://linkedin.com/in/votre-profil"
-                                        required
                                     >
                                     <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                         <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
@@ -1070,7 +1069,7 @@
             // ==========================================
             var CONFIG = {
                 API_URL: '/api/testimonials',  // URL de l'API pour soumettre les témoignages
-                MIN_TESTIMONIAL_LENGTH: 50,
+                MIN_TESTIMONIAL_LENGTH: 20,
                 MAX_TESTIMONIAL_LENGTH: 1000
             };
 
@@ -1110,7 +1109,7 @@
                     return null;
                 },
                 profileUrl: function(value) {
-                    if (!value.trim()) return 'Le lien LinkedIn ou portfolio est requis';
+                    if (!value.trim()) return null;
                     try {
                         var url = new URL(value);
                         if (!['http:', 'https:'].includes(url.protocol)) {
@@ -1276,7 +1275,8 @@
                     position: document.getElementById('position').value.trim(),
                     company: document.getElementById('company').value.trim() || null,
                     profile_url: document.getElementById('profileUrl').value.trim(),
-                    content: document.getElementById('testimonial').value.trim()
+                    content: document.getElementById('testimonial').value.trim(),
+                    rating: 5,
                 };
 
                 try {

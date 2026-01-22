@@ -25,7 +25,7 @@ def get_intent_router():
         Chaîne LangChain qui retourne: SQL | VECTOR | VECTOR_SQL | OFF_TOPIC
     """
     llm = ChatOpenAI(
-        model="gpt-4_1-2025-04-14",
+        model="gpt-4.1",
         temperature=0,
         api_key=os.getenv("OPENAI_API_KEY"),
         max_tokens=1024,

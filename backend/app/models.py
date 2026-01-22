@@ -182,7 +182,7 @@ class ChatMessage(Base):
     role = Column(String(20), nullable=False)  # 'user' ou 'assistant'
     content = Column(Text, nullable=False)
     intent = Column(String(20), nullable=True)  # SQL, VECTOR, VECTOR_SQL, OFF_TOPIC
-    metadata = Column(JSON, default={})
+    message_metadata = Column(JSON, default={})
     created_at = Column(DateTime, server_default=func.now())
 
     # Relation avec la session

@@ -14,7 +14,7 @@ from dotenv import load_dotenv
 from pydantic import BaseModel
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
-from backend.app.models import Datas
+from app.models import Datas
 
 
 from langchain_core.documents import Document

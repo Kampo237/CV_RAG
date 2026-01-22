@@ -34,6 +34,16 @@ class Home(View):
     """Page d'accueil du portfolio"""
 
     def get(self, request):
+        chatbot_status = "offline"
+        try:
+            response = requests.get('http://api:8001/health', timeout=5)
+            if response.status_code == 200:
+                chatbot_status = "online"
+            else:
+                print("L'API prête mais n'est pas accessible.")
+        except requests.exceptions.RequestException:
+            print("L'API Chatbot n'est pas encore prête.")
+            chatbot_status = "offline"
         context = {
             'info': InfoPersonnelle.get_instance(),
             'projets_featured': Projet.objects.filter(est_actif=True, est_mis_en_avant=True)[:3],

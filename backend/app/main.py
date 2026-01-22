@@ -105,13 +105,13 @@ try:
     from app.Rag.sql_chain import get_sql_chain_raw, check_sql_success
     from app.models import Datas, FAQ, Testimonial, ChatSession, ChatMessage
 except ImportError:
-    from backend.app import models
-    from backend.app.database import engine, get_db
-    from backend.app.Rag import get_intent_router, get_sql_chain, VectorStoreService, get_vector_store_service
-    from backend.app.Rag.retrieval import format_context, retrieve_and_rerank
-    from backend.app.Rag.generation import rephrase_question_async, generate_response, get_off_topic_response
-    from backend.app.Rag.sql_chain import get_sql_chain_raw, check_sql_success
-    from backend.app.models import Datas, FAQ, Testimonial, ChatSession, ChatMessage
+    from app import models
+    from app.database import engine, get_db
+    from app.Rag import get_intent_router, get_sql_chain, VectorStoreService, get_vector_store_service
+    from app.Rag.retrieval import format_context, retrieve_and_rerank
+    from app.Rag.generation import rephrase_question_async, generate_response, get_off_topic_response
+    from app.Rag.sql_chain import get_sql_chain_raw, check_sql_success
+    from app.models import Datas, FAQ, Testimonial, ChatSession, ChatMessage
 
 from dotenv import load_dotenv
 
@@ -335,6 +335,10 @@ def check_rate_limit(session_id: str) -> bool:
 @app.get("/")
 async def root():
     return {"message": "CV Chatbot API", "status": "online", "version": "2.0.0"}
+
+@app.get("/health")
+async def health_check():
+    return {"status": "ok", "message": "API is running"}
 
 
 # =============================================================================
@@ -638,11 +642,14 @@ async def create_testimonial(data: TestimonialCreate, db: db_dependency):
     """Crée un nouveau témoignage (en attente d'approbation)"""
     logger.info(f"Nouveau témoignage de: {data.author_name}")
 
+    # tester le profil pour s'assurer qu'il existe....
+    # profile_url: document.getElementById('profileUrl').value.trim(),
+
     testimonial = Testimonial(
-        author_name=data.author_name,
-        author_email=data.author_email,
-        author_company=data.author_company,
-        author_position=data.author_position,
+        author_name=data.first_name + " " + data.last_name,
+        author_email=data.email,
+        author_company=data.company,
+        author_position=data.position,
         content=data.content,
         rating=max(1, min(5, data.rating)),
         is_approved=False,
@@ -851,7 +858,7 @@ async def add_knowledge(
     try:
         from app.Rag.vector_store import EmbeddingRequest as VSEmbeddingRequest
     except ImportError:
-        from backend.app.Rag.vector_store import EmbeddingRequest as VSEmbeddingRequest
+        from app.Rag.vector_store import EmbeddingRequest as VSEmbeddingRequest
 
     vs_requests = [
         VSEmbeddingRequest(

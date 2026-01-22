@@ -2,9 +2,9 @@ import asyncio
 from dotenv import load_dotenv
 
 from sqlalchemy import text
-from backend.app.database import SessionLocal
+from app.database import SessionLocal
 from langchain_core.documents import Document
-from backend.app.Rag.vector_store import get_vector_store
+from app.Rag.vector_store import get_vector_store
 
 load_dotenv()
 
