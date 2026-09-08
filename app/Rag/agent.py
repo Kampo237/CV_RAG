@@ -490,6 +490,30 @@ COMPORTEMENT GLOBAL
 LOCAL_TOOLS = [search_knowledge_base, query_sql_datas, query_sql_projects]
 
 
+def _extract_text(content) -> str:
+    """
+    Extrait le texte d'un AIMessage.content.
+
+    Selon le modèle, .content peut être une simple str OU une liste de blocs
+    (ex: claude-sonnet-5 renvoie [{"type": "thinking", ...}, {"type": "text",
+    "text": "..."}] avec l'extended thinking) — sans cette extraction, un
+    `list` remonte tel quel jusqu'au streaming de main.py qui appelle
+    .split(" ") dessus et plante ('list' object has no attribute 'split').
+    """
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        parts = []
+        for block in content:
+            if isinstance(block, dict):
+                if block.get("type") == "text":
+                    parts.append(block.get("text", ""))
+            elif isinstance(block, str):
+                parts.append(block)
+        return "".join(parts)
+    return str(content) if content else ""
+
+
 # =============================================================================
 # CONSTRUCTION DE L'AGENT
 # =============================================================================
@@ -624,8 +648,9 @@ async def run_rag_agent(
         for msg in reversed(final_messages):
             if hasattr(msg, "type") and msg.type == "ai" and msg.content:
                 if not getattr(msg, "tool_calls", []):
-                    answer = msg.content
-                    break
+                    answer = _extract_text(msg.content)
+                    if answer:
+                        break
 
         tool_calls_count = sum(
             1 for msg in final_messages
@@ -635,11 +660,9 @@ async def run_rag_agent(
         context_parts = []
         for msg in final_messages:
             if hasattr(msg, "type") and msg.type == "tool" and msg.content:
-                # Les outils MCP peuvent retourner le contenu comme une liste
-                if isinstance(msg.content, list):
-                    context_parts.append(str(msg.content))
-                else:
-                    context_parts.append(msg.content)
+                # Les outils MCP renvoient parfois le contenu comme une liste
+                # de blocs {"type": "text", "text": "..."} — on en extrait le texte.
+                context_parts.append(_extract_text(msg.content))
         context = "\n\n---\n\n".join(context_parts) if context_parts else ""
 
         logger.info(f"[run_rag_agent] tools_called={tool_calls_count} answer_len={len(answer)} context_len={len(context)}")
