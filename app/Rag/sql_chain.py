@@ -84,7 +84,7 @@ def get_sql_chain():
     """
     llm = ChatAnthropic(
         model_name="claude-sonnet-5",
-        temperature=0,
+        # `temperature` est refusé par ce modèle (400 invalid_request_error) — ne pas le passer.
         api_key=os.getenv("ANTHROPIC_API_KEY")
     )
 
@@ -209,7 +209,7 @@ def get_sql_chain_raw():
     """
     llm = ChatAnthropic(
         model_name="claude-sonnet-5",
-        temperature=0,
+        # `temperature` est refusé par ce modèle (400 invalid_request_error) — ne pas le passer.
         api_key=os.getenv("ANTHROPIC_API_KEY")
     )
 

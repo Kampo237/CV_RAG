@@ -23,7 +23,7 @@ from fastapi.responses import StreamingResponse, JSONResponse
 import json
 import asyncio
 from datetime import datetime
-import os, traceback, json, uuid
+import os, traceback, json, uuid, re
 
 # =============================================================================
 # CONFIGURATION DU LOGGING
@@ -393,6 +393,23 @@ def check_rate_limit(session_id: str) -> bool:
 JORDAN_PHONE = os.getenv("JORDAN_PHONE")  # doit être défini en .env — pas de valeur en dur dans le code
 
 
+def _summarize_error(exc: Exception) -> str:
+    """
+    Résumé court et lisible d'une exception pour les alertes SMS.
+
+    Les erreurs API (Anthropic, etc.) arrivent souvent sous la forme
+    "Error code: 400 - {'type': 'error', 'error': {..., 'message': '...'}}" :
+    du JSON brut illisible une fois tronqué sur un écran de SMS. On en extrait
+    juste le champ "message" quand c'est possible, sinon on retombe sur le nom
+    du type d'exception + le début du message.
+    """
+    raw = str(exc)
+    match = re.search(r"[\"']message[\"']\s*:\s*[\"']([^\"']+)[\"']", raw)
+    if match:
+        return f"{type(exc).__name__}: {match.group(1)}"
+    return f"{type(exc).__name__}: {raw[:200]}"
+
+
 async def send_alert_sms(message: str, level: str = "INFO"):
     """
     Envoie un SMS d'alerte à Jordan en arrière-plan.
@@ -405,24 +422,26 @@ async def send_alert_sms(message: str, level: str = "INFO"):
       - INFO  : visiteur intéressant, interaction notable
       - WARN  : comportement suspect, rate limit, tentative d'abus
       - ERROR : erreur technique, crash, DB indisponible
-    
-    Le message est tronqué à 160 car. (limite SMS).
+
+    Le message est tronqué à 1500 car. — Twilio segmente automatiquement les SMS
+    concaténés au-delà de 160 car., donc pas besoin de couper à 160 : ça coupait
+    des messages d'erreur en plein milieu (ex. un JSON d'erreur Anthropic).
     """
     def _send_sync():
         try:
             from twilio.rest import Client
-            
+
             sid = os.getenv("TWILIO_ACCOUNT_SID")
             token = os.getenv("TWILIO_AUTH_TOKEN")
             from_number = os.getenv("TWILIO_FROM_NUMBER")
-            
+
             if not all([sid, token, from_number, JORDAN_PHONE]):
                 logger.warning("[ALERT_SMS] Config Twilio incomplète, alerte ignorée")
                 return
-            
-            # Préfixer avec le niveau et tronquer
+
+            # Préfixer avec le niveau et tronquer (large marge, cf. docstring)
             prefix = f"[{level}] "
-            truncated = prefix + message[:160 - len(prefix)]
+            truncated = prefix + message[:1500 - len(prefix)]
             
             client = Client(sid, token)
             client.messages.create(
@@ -631,7 +650,7 @@ async def chat(request: QuestionRequest, http_request: Request):
                 logger.error(f"[{request_id}] ❌ Erreur LangGraph: {e}")
                 logger.error(traceback.format_exc())
                 pipeline_error = True
-                pipeline_error_detail = f"{type(e).__name__}: {e}"
+                pipeline_error_detail = _summarize_error(e)
                 timer.end_step("ERREUR (contexte vide)")
 
             # =====================================================================
@@ -659,7 +678,7 @@ async def chat(request: QuestionRequest, http_request: Request):
                 )
                 save_interaction(session_id, request.question, "Erreur pipeline", db)
                 await send_alert_sms(
-                    f"PIPELINE KO sess={session_id[:8]} q='{request.question[:30]}' :: {pipeline_error_detail[:80]}",
+                    f"PIPELINE KO sess={session_id[:8]} q='{request.question[:60]}' :: {pipeline_error_detail}",
                     level="ERROR",
                 )
                 timer.end_step("PIPELINE_ERREUR")
@@ -699,7 +718,7 @@ async def chat(request: QuestionRequest, http_request: Request):
                 yield "Désolé, un problème technique est survenu. Réessaie dans un instant."
                 # Alerte SMS en arrière-plan avec le vrai contexte technique
                 await send_alert_sms(
-                    f"Erreur stream session {session_id[:8]}: {str(e)[:100]}",
+                    f"Erreur stream session {session_id[:8]}: {_summarize_error(e)}",
                     level="ERROR"
                 )
 
@@ -710,7 +729,7 @@ async def chat(request: QuestionRequest, http_request: Request):
             yield "Désolé, une erreur inattendue s'est produite. N'hésite pas à réessayer."
             # Alerte SMS urgente
             await send_alert_sms(
-                f"CRASH FATAL {request_id}: {str(e)[:100]}",
+                f"CRASH FATAL {request_id}: {_summarize_error(e)}",
                 level="ERROR"
             )
         finally:

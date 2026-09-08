@@ -58,7 +58,7 @@ def _get_agent_llm() -> ChatAnthropic:
     if _llm_agent is None:
         _llm_agent = ChatAnthropic(
             model_name="claude-sonnet-5",
-            temperature=0,
+            # `temperature` est refusé par ce modèle (400 invalid_request_error) — ne pas le passer.
             api_key=os.getenv("ANTHROPIC_API_KEY"),
         )
     return _llm_agent
