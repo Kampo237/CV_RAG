@@ -142,8 +142,15 @@ load_dotenv()
 async def lifespan(app: FastAPI):
     """Lifecycle: Initialisation au démarrage"""
     logger.info("🚀 Démarrage de l'application RAG Chatbot")
-    models.Base.metadata.create_all(bind=engine)
-    logger.info("✅ Tables créées/vérifiées")
+    # Fix — une base serverless (Neon) qui se réveille peut être lente/indisponible
+    # quelques instants au cold start. Un échec ici ne doit plus faire planter
+    # tout le process (c'est exactement ce qui a fait tomber l'API avec binatonedb).
+    try:
+        models.Base.metadata.create_all(bind=engine)
+        logger.info("✅ Tables créées/vérifiées")
+    except Exception as e:
+        logger.error(f"❌ Impossible de créer/vérifier les tables au démarrage: {e}")
+        logger.error("   L'API démarre quand même — les routes qui dépendent de la DB échoueront tant qu'elle n'est pas joignable.")
 
     # Pre-chauffage du graphe LangGraph au boot
     # Sans ca, la 1re requete paie le cout de compilation (~200ms)

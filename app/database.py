@@ -4,6 +4,7 @@ Support synchrone (SQLAlchemy) et asynchrone (asyncpg pour LangChain)
 """
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy.pool import NullPool
 import os
 from dotenv import load_dotenv
 
@@ -23,9 +24,13 @@ URL_DATABASE = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NA
 URL_DATABASE_ASYNC = f"postgresql+asyncpg://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
 # Engine et Session synchrones
+# NullPool = aucune connexion persistante gardée ouverte entre deux requêtes.
+# Nécessaire pour un Postgres serverless (Neon) : avec un pool classique
+# (QueuePool), une connexion reste ouverte en continu et empêche le compute
+# de se suspendre → facturation en continu au lieu de à l'usage.
 engine = create_engine(URL_DATABASE,
+    poolclass=NullPool,
     pool_pre_ping=True,
-    pool_recycle=300
 )
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
