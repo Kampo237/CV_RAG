@@ -36,6 +36,26 @@ logger = logging.getLogger("rag_pipeline")
 MAX_RETRIES = 3
 HEARTBEAT_INTERVAL = 10
 
+# =============================================================================
+# DEMANDE DE CLARIFICATION
+# =============================================================================
+# Quand le message est trop vague pour être reformulé en question autonome
+# (ex: "euhh", "vasy voir..."), la reformulation ne doit PAS inventer un sens :
+# elle doit produire une question de clarification à reposer au visiteur, et
+# le reste du pipeline (SQL/vector/agent) doit être court-circuité pour ce tour
+# (cf. app/main.py) plutôt que de tenter de "répondre" à cette clarification.
+CLARIFY_PREFIX = "[CLARIFY]"
+
+
+def is_clarification_request(rephrased: str) -> bool:
+    """True si la reformulation est en fait une question de clarification à reposer au visiteur."""
+    return rephrased.strip().startswith(CLARIFY_PREFIX)
+
+
+def extract_clarification_question(rephrased: str) -> str:
+    """Extrait le texte de la question de clarification (sans le marqueur)."""
+    return rephrased.strip()[len(CLARIFY_PREFIX):].strip()
+
 
 def get_llm(temperature: float = 0) -> ChatAnthropic:
     """Retourne une instance du LLM Claude configurée"""
@@ -142,8 +162,9 @@ Règles:
 - Garde la reformulation concise
 - CRITIQUE : conserve les noms de projets, technologies, personnes et tout terme spécifique EXACTEMENT comme l'utilisateur les a écrits. Ne corrige JAMAIS l'orthographe des noms propres (ex: "supercchic" reste "supercchic", pas "Superchic")
 - Tu peux corriger la grammaire courante (conjugaison, accords) mais JAMAIS les noms propres ou noms de projets
+- Si le message est trop vague, creux ou incomplet pour être reformulé en question autonome (ex: "euhh", "vasy voir", "ok", un mot isolé, une phrase sans sujet ni verbe clair) : N'INVENTE PAS de sens. Réponds UNIQUEMENT par le préfixe "{clarify_prefix}" suivi d'une courte question de clarification, chaleureuse, dans la langue du visiteur, avec 1 emoji pour rester expressif (ex: "{clarify_prefix} Tu veux en savoir plus sur mes projets, mes compétences, ou autre chose ? 🤔")
 
-Réponds UNIQUEMENT avec la question reformulée, sans explication."""),
+Réponds UNIQUEMENT avec la question reformulée (ou "{clarify_prefix} ..." si clarification nécessaire), sans explication."""),
         ("human", """Historique:
 {history}
 
@@ -157,7 +178,8 @@ Question reformulée:""")
     try:
         rephrased = chain.invoke({
             "history": history_text,
-            "question": question
+            "question": question,
+            "clarify_prefix": CLARIFY_PREFIX,
         })
         return rephrased.strip()
     except Exception as e:

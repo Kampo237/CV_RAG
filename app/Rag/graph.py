@@ -210,6 +210,11 @@ SQL:"""
 # =============================================================================
 
 async def rephrase_node(state: RAGState) -> dict:
+    # Si l'appelant a déjà reformulé la question (cf. app/main.py, qui fait ce
+    # check en amont pour intercepter les demandes de clarification), on ne
+    # la recalcule pas — évite un appel LLM redondant.
+    if state.get("rephrased_question"):
+        return {}
     rephrased = await rephrase_question_async(state["question"], state.get("history", []))
     logger.info(f"[rephrase_node] '{rephrased[:80]}'")
     return {"rephrased_question": rephrased}
@@ -462,9 +467,10 @@ def get_rag_graph():
 # =============================================================================
 
 async def run_rag_graph(
-    question:   str,
-    session_id: str  = "anonymous",
-    history:    list = None,
+    question:           str,
+    session_id:         str  = "anonymous",
+    history:            list = None,
+    rephrased_question: str  = "",
 ) -> dict:
     """
     Lance le pipeline RAG complet.
@@ -473,6 +479,11 @@ async def run_rag_graph(
       - run_name  → identifie le run dans LangSmith
       - tags      → filtrables dans l'UI LangSmith
       - metadata  → question + session visibles dans chaque trace
+
+    Args:
+        rephrased_question: si l'appelant a déjà reformulé la question (ex:
+            app/main.py, pour intercepter une demande de clarification avant
+            de lancer le pipeline), on la réutilise au lieu de la recalculer.
     """
     graph = get_rag_graph()
 
@@ -480,7 +491,7 @@ async def run_rag_graph(
         "question":           question,
         "session_id":         session_id,
         "history":            history or [],
-        "rephrased_question": "",
+        "rephrased_question": rephrased_question,
         "intent":             "",
         "sql_result":         "",
         "sql_confidence":     0.0,

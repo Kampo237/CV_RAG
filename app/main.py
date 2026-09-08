@@ -126,6 +126,8 @@ from app.Rag.retrieval import format_context, retrieve_and_rerank
 from app.Rag.generation import (
     rephrase_question_async,
     generate_response,
+    is_clarification_request,
+    extract_clarification_question,
 )
 from app.Rag.sql_chain import get_sql_chain_raw
 
@@ -611,10 +613,32 @@ async def chat(request: QuestionRequest, http_request: Request):
             timer.end_step(f"{len(history)} messages")
 
             # =====================================================================
+            # 2B. REFORMULATION (faite une seule fois ici, en amont du pipeline)
+            #
+            # Si le message est trop vague pour être reformulé en question
+            # autonome (ex: "euhh", "vasy voir..."), on ne lance PAS le
+            # pipeline RAG dessus : ça reviendrait à demander à l'agent de
+            # "répondre" à une question de clarification au lieu de la
+            # reposer au visiteur. On répond directement avec la clarification
+            # et on s'arrête là pour ce tour — le prochain message du visiteur
+            # profitera de cet échange dans l'historique pour mieux répondre.
+            # =====================================================================
+            timer.start_step("2B_REFORMULATION")
+            rephrased_question = await rephrase_question_async(request.question, history)
+
+            if is_clarification_request(rephrased_question):
+                clarification = extract_clarification_question(rephrased_question)
+                timer.end_step("CLARIFICATION_DEMANDEE")
+                yield clarification
+                save_interaction(session_id, request.question, clarification, db)
+                return
+            timer.end_step(f"'{rephrased_question[:60]}'")
+
+            # =====================================================================
             # 3-5. PIPELINE LANGGRAPH
-            #   rephrase → route → [sql_execute ⇄ sql_quality ⇄ table_explore]
-            #                      [vector | hybrid]
-            #            → synthesize
+            #   route → [sql_execute ⇄ sql_quality ⇄ table_explore]
+            #           [vector | hybrid]
+            #         → synthesize
             # Le graphe gère automatiquement la boucle cross-table et le
             # fallback vector si SQL est vide sur toutes les tables.
             # =====================================================================
@@ -633,12 +657,14 @@ async def chat(request: QuestionRequest, http_request: Request):
                         question=request.question,
                         session_id=session_id,
                         history=history,
+                        rephrased_question=rephrased_question,
                     )
                 else:
                     final_state = await run_rag_graph(
                         question=request.question,
                         session_id=session_id,
                         history=history,
+                        rephrased_question=rephrased_question,
                     )
                 context           = final_state.get("context", "")
                 intent            = final_state.get("intent", "UNKNOWN")

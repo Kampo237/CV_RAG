@@ -518,6 +518,7 @@ async def run_rag_agent(
     question: str,
     session_id: str = "anonymous",
     history: list = None,
+    rephrased_question: str = "",
 ) -> dict:
     """
     Lance le pipeline RAG agentique.
@@ -532,10 +533,18 @@ async def run_rag_agent(
     3. Construction de l'agent avec tous les outils (locaux + MCP)
     4. Exécution de l'agent ReAct (raisonnement + appels d'outils)
     5. Extraction du contexte et de la réponse
+
+    Args:
+        rephrased_question: si l'appelant a déjà reformulé la question (ex:
+            app/main.py, pour intercepter une demande de clarification avant
+            de lancer l'agent), on la réutilise au lieu de la recalculer.
     """
 
-    # Étape 1 — Reformulation
-    rephrased = await rephrase_question_async(question, history or [])
+    # Étape 1 — Reformulation (sauf si déjà fournie par l'appelant)
+    if rephrased_question:
+        rephrased = rephrased_question
+    else:
+        rephrased = await rephrase_question_async(question, history or [])
     logger.info(f"[run_rag_agent] question reformulée: '{rephrased[:80]}'")
 
     # Étape 2 — Charger les outils MCP (session ouverte pendant toute la suite)
