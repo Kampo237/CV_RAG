@@ -46,6 +46,10 @@ pypdf>=6.0.0
 python-docx>=1.2.0
 
 # MCP servers
+# mcp 2.x a renommé FastMCP -> MCPServer et cassé l'API utilisée ici
+# (mcp_servers/sms_server/server.py) et par langchain-mcp-adapters<0.2.
+# On reste sur la branche 1.x tant que le code n'est pas migré.
+mcp<2.0.0
 fastmcp>=2.10.0
 langchain-mcp-adapters>=0.1.0
 
