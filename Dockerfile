@@ -15,8 +15,9 @@ RUN pip install --no-cache-dir --upgrade pip && \
 
 # Copie de tout le dossier 'app' vers le conteneur
 COPY ./app ./app
-COPY ./.chainlit ./.chainlit
-COPY ./.env ./.env
+COPY ./mcp_servers ./mcp_servers
+# NB: pas de COPY du .env — les secrets sont fournis au runtime via le `env_file`
+# de docker-compose (sur EC2). Évite de baker les clés API dans l'image.
 
 # Création d'un utilisateur non-root pour la sécurité
 RUN useradd --create-home appuser \

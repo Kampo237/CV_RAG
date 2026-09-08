@@ -8,6 +8,7 @@ Technos :
 """
 
 import os
+import asyncio
 from typing import Optional, List, Dict, Any
 
 from dotenv import load_dotenv
@@ -173,15 +174,21 @@ class VectorStoreService:
                 sql_datas_entries.append(new_data)
 
             # 2. Sauvegarde dans le Vector Store (LangChain / pgvector)
-            # Cette étape génère les embeddings automatiquement
-            ids = vector_store.add_documents(langchain_documents)
+            # Cette étape génère les embeddings automatiquement.
+            # Appel réseau bloquant (Voyage AI + Postgres) → thread pool pour
+            # ne pas geler la boucle d'événements FastAPI.
+            loop = asyncio.get_running_loop()
+            ids = await loop.run_in_executor(None, vector_store.add_documents, langchain_documents)
 
             # 3. Sauvegarde dans la table SQL classique (Datas)
-            db.add_all(sql_datas_entries)
-            db.commit()  # Valide la transaction SQL
+            def _persist_sql():
+                db.add_all(sql_datas_entries)
+                db.commit()  # Valide la transaction SQL
+
+            await loop.run_in_executor(None, _persist_sql)
 
             # 4. Rafraichissement (si nécessaire pour ton cache local)
-            self.reload_vector_store()
+            await loop.run_in_executor(None, self.reload_vector_store)
 
             # Résultat
             created_items = [
@@ -214,10 +221,14 @@ class VectorStoreService:
             if request.metadata_filter:
                 filter_dict.update(request.metadata_filter)
 
-            results = vector_store.similarity_search_with_relevance_scores(
-                query=request.query,
-                k=request.top_k,
-                filter=None if not filter_dict else filter_dict
+            loop = asyncio.get_running_loop()
+            results = await loop.run_in_executor(
+                None,
+                lambda: vector_store.similarity_search_with_relevance_scores(
+                    query=request.query,
+                    k=request.top_k,
+                    filter=None if not filter_dict else filter_dict
+                ),
             )
 
             final_results = []
@@ -241,7 +252,8 @@ class VectorStoreService:
 
     async def similarity_search(self, query: str, k: int = 10) -> List[Document]:
         vector_store = self.get_vector_store()
-        return vector_store.similarity_search(query, k=k)
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(None, lambda: vector_store.similarity_search(query, k=k))
 
     # -------------------------- Retriever --------------------------
 

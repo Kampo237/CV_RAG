@@ -1,0 +1,11 @@
+{
+  "label": "baseline_automate",
+  "timestamp": "20260416_012407",
+  "num_questions": 25,
+  "scores": {
+    "faithfulness": 0.5541,
+    "context_recall": 0.48,
+    "factual_correctness(mode=f1)": 0.2888
+  },
+  "intent_accuracy": 0.0
+}

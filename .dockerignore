@@ -1,0 +1,40 @@
+# ============================================================
+# .dockerignore — fichiers à NE PAS inclure dans l'image Docker
+# ============================================================
+
+# Variables d'environnement (CRITIQUE — contient tes clés API)
+.env
+.env.*
+!.env.example
+
+# Git
+.git/
+.gitignore
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.venv/
+venv/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Docker (éviter la récursion)
+docker-compose*.yml
+Dockerfile*
+
+# Tests et évaluation
+app/evaluation/results/
+
+# Node (si présent)
+node_modules/
+
+# Fichiers temporaires
+*.log
+*.tmp

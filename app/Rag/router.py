@@ -24,7 +24,7 @@ def get_intent_router():
         Chaîne LangChain qui retourne: SQL | VECTOR | VECTOR_SQL | OFF_TOPIC
     """
     llm = ChatAnthropic(
-        model_name="claude-sonnet-4-20250514",
+        model_name="claude-sonnet-5",
         temperature=0,
         api_key=os.getenv("ANTHROPIC_API_KEY")
     )
@@ -47,12 +47,30 @@ CATÉGORIES DE CLASSIFICATION:
    - Dates spécifiques : "Quand as-tu...", "En quelle année...", "Depuis combien de temps..."
    - Filtres techniques précis : "Projets en Python", "Expériences backend uniquement"
    - Durées : "Combien d'années d'expérience...", "Durée de..."
+   - Vérifications d'existence de compétences/technologies :
+       "As-tu de l'expérience en X ?", "Tu connais X ?", "Tu travailles avec X ?"
+       "Tu maîtrises X ?", "Quel est ton niveau en X ?", "T'as fait des trucs en X ?"
+       où X est un langage, framework, outil, technologie
    
+   ⚠️ RÈGLE CLÉ — le mot "expérience" peut tromper :
+   - "As-tu de l'expérience en React ?"   → SQL  (existence de compétence)
+   - "Tu connais Python ?"                  → SQL  (existence de compétence)
+   - "T'as travaillé avec Docker ?"         → SQL  (existence de compétence)
+   - "Parle-moi de ton expérience React"   → VECTOR  (narration/description)
+   - "Raconte ton parcours avec Python"     → VECTOR  (narration/description)
+   Le critère : la question cherche-t-elle à SAVOIR SI la compétence existe ? → SQL
+               ou à ENTENDRE UNE HISTOIRE dessus ? → VECTOR
+
    Exemples SQL:
    - "Combien de projets as-tu réalisés?" → SQL
    - "Liste toutes tes compétences techniques" → SQL
    - "Quand as-tu obtenu ton diplôme?" → SQL
    - "Combien d'années d'expérience en C#?" → SQL
+   - "As-tu de l'expérience en React ?" → SQL
+   - "Tu connais Docker ?" → SQL
+   - "Quel est ton niveau en Python ?" → SQL
+   - "As-tu travaillé avec AWS ?" → SQL
+   - "T'as un portfolio ?" → SQL
 
 2. VECTOR → Questions QUALITATIVES et DESCRIPTIVES
    Indicateurs:
@@ -75,13 +93,18 @@ CATÉGORIES DE CLASSIFICATION:
    Indicateurs:
    - Besoin d'identifier PUIS décrire : "Décris ton projet le plus récent"
    - Superlatifs + détails : "Ton meilleur projet", "Ta plus grande réussite"
-   - Filtres + explications : "Explique ton expérience en Python"
+   - Filtres + narration : "Parle-moi de tes projets React en détail"
    - Comparaisons : "Différence entre tes projets web et desktop"
    
    Exemples VECTOR_SQL:
    - "Décris ton projet le plus récent" → VECTOR_SQL
    - "Parle-moi de ton expérience la plus significative" → VECTOR_SQL
    - "Quel est ton meilleur projet et pourquoi?" → VECTOR_SQL
+   - "Raconte-moi un projet React que tu as fait" → VECTOR_SQL  (narration + données)
+   
+   ⚠️ NE PAS confondre avec SQL pur :
+   - "Explique ton expérience en Python" → VECTOR_SQL  (narration demandée explicitement)
+   - "As-tu de l'expérience en Python ?" → SQL  (existence seulement, pas de narration)
 
 4. OFF_TOPIC → Questions VRAIMENT hors contexte
    ATTENTION: Sois TOLÉRANT. Beaucoup de questions peuvent être reliées au profil pro.
