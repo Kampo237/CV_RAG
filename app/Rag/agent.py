@@ -24,6 +24,7 @@ import logging
 from typing import Optional
 
 from dotenv import load_dotenv
+from sqlalchemy.pool import NullPool
 from langchain_anthropic import ChatAnthropic
 from langchain_core.tools import tool
 from langchain_core.runnables import RunnableConfig
@@ -65,13 +66,21 @@ def _get_agent_llm() -> ChatAnthropic:
 
 
 def _get_db(table_name: str) -> SQLDatabase:
-    """Connexion SQL en cache par table."""
+    """
+    Connexion SQL en cache par table.
+
+    NullPool + pool_pre_ping : cet objet vit pour toute la durée du process,
+    donc sur une base serverless (Neon) le pool par défaut garde une
+    connexion qui finit par être coupée après suspension du compute
+    ("SSL connection has been closed unexpectedly" au prochain appel).
+    """
     global _db_cache
     if table_name not in _db_cache:
         _db_cache[table_name] = SQLDatabase.from_uri(
             DB_URL,
             include_tables=[table_name],
             sample_rows_in_table_info=0,
+            engine_args={"poolclass": NullPool, "pool_pre_ping": True},
         )
     return _db_cache[table_name]
 

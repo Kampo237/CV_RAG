@@ -15,6 +15,7 @@ from dotenv import load_dotenv
 from pydantic import BaseModel
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
+from sqlalchemy.pool import NullPool
 from app.models import Datas
 
 
@@ -129,6 +130,14 @@ class VectorStoreService:
                 collection_name=collection,
                 connection=connection_string,  # psycopg2 synchrone
                 use_jsonb=True,
+                # PGVector crée son propre engine SQLAlchemy en interne, distinct
+                # de celui d'app/database.py — sans ça il gardait une connexion
+                # persistante (QueuePool par défaut) que Neon finit par couper
+                # après suspension du compute, d'où "SSL connection has been
+                # closed unexpectedly" au prochain appel. Même traitement que
+                # l'engine principal : NullPool (pas de connexion gardée entre
+                # deux appels) + pool_pre_ping (revérifie avant usage).
+                engine_args={"poolclass": NullPool, "pool_pre_ping": True},
             )
 
             self._vector_store.create_collection()

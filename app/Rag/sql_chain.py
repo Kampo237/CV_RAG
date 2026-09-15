@@ -12,10 +12,17 @@ from langchain_anthropic import ChatAnthropic
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough, RunnableLambda
+from sqlalchemy.pool import NullPool
 from dotenv import load_dotenv
 import os
 import re
 import logging
+
+# NullPool + pool_pre_ping pour toutes les connexions SQLDatabase de ce module :
+# sur une base serverless (Neon), une connexion pool par défaut finit par être
+# coupée après suspension du compute ("SSL connection has been closed
+# unexpectedly" au prochain appel).
+_NEON_SAFE_ENGINE_ARGS = {"poolclass": NullPool, "pool_pre_ping": True}
 
 load_dotenv()
 
@@ -91,7 +98,8 @@ def get_sql_chain():
     db = SQLDatabase.from_uri(
         DB_URL,
         include_tables=SQL_TABLE,
-        sample_rows_in_table_info=3
+        sample_rows_in_table_info=3,
+        engine_args=_NEON_SAFE_ENGINE_ARGS,
     )
 
     # Prompt avec classification de table intégrée.
@@ -216,7 +224,8 @@ def get_sql_chain_raw():
     db = SQLDatabase.from_uri(
         DB_URL,
         include_tables=SQL_TABLE,
-        sample_rows_in_table_info=3
+        sample_rows_in_table_info=3,
+        engine_args=_NEON_SAFE_ENGINE_ARGS,
     )
 
     # Même carte de routage que get_sql_chain() — prompt unifié.
