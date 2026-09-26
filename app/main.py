@@ -887,7 +887,9 @@ async def chat(request: QuestionRequest, http_request: Request):
                 return
 
             if not visible.strip():
-                visible = "Je n'ai pas trouvé d'informations pertinentes pour répondre à cela."
+                # Le modèle n'a écrit qu'une ligne [[guide]] (ou rien) : jamais de
+                # réponse vide, et pas de « rien trouvé » quand le site navigue.
+                visible = "Voilà 👇" if guide_line else "Je n'ai pas cette information."
                 yield visible
 
             suffix = guide_suffix(visible, guide_line)

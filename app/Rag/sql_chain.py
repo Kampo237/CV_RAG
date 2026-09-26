@@ -106,7 +106,7 @@ def get_sql_chain():
     # Le LLM classe d'abord la question dans une catégorie métier, puis génère
     # une requête SQL ciblée sur la bonne table — sans scanner tout le schéma.
     sql_prompt = ChatPromptTemplate.from_messages([
-        ("system", """Tu es un expert SQL PostgreSQL pour le chatbot CV de Yann Jordan Pokam.
+        ("system", """Tu es un expert SQL PostgreSQL pour le chatbot CV de Jordan Pokam Teguia.
 
 SCHÉMA COMPLET:
 {table_info}
@@ -182,7 +182,7 @@ RÈGLES SQL:
 
     # NOTE: Même chose ici, aucune accolade littérale dans le texte statique du prompt.
     answer_prompt = ChatPromptTemplate.from_messages([
-        ("system", """Tu es un assistant qui répond aux questions sur le CV de Yann.
+        ("system", """Tu es un assistant qui répond aux questions sur le CV de Jordan.
 
 Utilise le résultat de la requête SQL pour formuler une réponse naturelle et professionnelle.
 
@@ -232,7 +232,7 @@ def get_sql_chain_raw():
     # Même carte de routage que get_sql_chain() — prompt unifié.
     # Les accolades littérales JSON dans les exemples sont doublées ({{ }}).
     sql_prompt = ChatPromptTemplate.from_messages([
-        ("system", """Tu es un expert SQL PostgreSQL pour le chatbot CV de Yann Jordan Pokam.
+        ("system", """Tu es un expert SQL PostgreSQL pour le chatbot CV de Jordan Pokam Teguia.
 Génère UNIQUEMENT la requête SQL, sans explication.
 
 SCHÉMA:

@@ -45,10 +45,39 @@ def normalize(text_: str) -> str:
 
 
 _NAV = re.compile(
-    r"\b(montre\w*|affiche\w*|ouvre\w*|ouvrir|voir|va sur|aller|emmene\w*|amene\w*|"
-    r"redirige\w*|dirige\w*|ou (est|sont|se trouve|trouver|je trouve|puis-je)|"
-    r"telecharg\w*|lien|show|open|where)\b"
+    r"\b(montre\w*|affiche\w*|ouvre\w*|ouvrir|voir|va sur|vas sur|va a|vas a|aller|allons|"
+    r"emm?e+nn?e\w*|amm?e+nn?e\w*|mene(-| )moi|conduis\w*|redirig\w*|dirige\w*|"
+    r"ou (est|sont|se trouve|trouver|je trouve|puis-je)|page|telecharg\w*|lien|"
+    r"show|open|where|take me|go to)\b"
 )
+_GREETING = re.compile(
+    r"^(bonjour|bonsoir|salut|allo|hello|hi|hey|coucou|yo)"
+    r"( (toi|jordan|a toi|tout le monde|a tous))?[\s!.,?]*$"
+)
+_THEME_DARK = re.compile(r"\b(mode|theme|affichage|fond) (sombre|nuit|noir|dark)\b|\bdark( mode)?\b|\bassombri\w*")
+_THEME_LIGHT = re.compile(r"\b(mode|theme|affichage|fond) (clair|jour|blanc|light)\b|\blight mode\b|\beclairci\w*")
+_ABOUT_ME = re.compile(
+    r"\b(a propos de toi|parle(-| )moi de toi|parle de toi|qui es(-| )tu|presente(-| )toi|"
+    r"te presenter|tu es qui|toi c'est qui|dis(-| )moi qui tu es)\b"
+)
+_LANGUAGES = re.compile(r"\b(langues?|parles(-| )tu|tu parles|bilingue)\b")
+_CERTIFICATIONS = re.compile(r"\b(certifications?|certifie\w*|pl-?900|power platform fundamentals)\b")
+_DISTINCTIONS = re.compile(r"\b(distinctions?|prix|recompenses?|permis|hackathons?|mchacks|mpchacks|mentorat|mentor)\b")
+_VALUES = re.compile(r"\b(valeurs|qualites)\b")
+_INTERESTS = re.compile(r"\b(interets?|centres? d'interet|passions?|loisirs|hobbies?)\b")
+_BEST_PROJECTS = re.compile(
+    r"\b(meilleurs?|principaux|phares?|preferes?|favoris?|top|plus importants?)( \w+)? (projets?|realisations?)\b"
+    r"|\b(projets?|realisations?) (phares?|preferes?|favoris?|principaux|mis en avant)\b"
+)
+# Sections d'une fiche projet (ancres du site)
+_PROJECT_SECTIONS = [
+    ("project-problem", re.compile(r"\b(probleme|problematique|defi|enjeu|besoin)\b")),
+    ("project-approach", re.compile(r"\b(approche|methode|architecture|conception|comment (tu l'as|as-tu|il a ete|c'est|l'as-tu) \w+)\b")),
+    ("project-features", re.compile(r"\b(fonctionnalites?|features?|que fait|ce que fait)\b")),
+    ("project-results", re.compile(r"\b(resultats?|impact|bilan|metriques?)\b")),
+    ("project-gallery", re.compile(r"\b(captures?|screenshots?|galerie|images?|photos?)\b")),
+    ("project-overview", re.compile(r"\b(vue d'ensemble|apercu|resume)\b")),
+]
 _CV = re.compile(r"\b(cv|curriculum( vitae)?)\b")
 _PDF = re.compile(r"\bpdf\b")
 _TESTIMONIALS = re.compile(r"\b(temoignages?|avis|recommandations?|testimonials?)\b")
@@ -137,11 +166,15 @@ def wants_sms(question: str, history: list[dict]) -> bool:
 
 @dataclass
 class FastRoute:
-    kind: str                 # cv | testimonials | about | approach | contact |
-                              # skills | experiences | education | projects | project
-    navigate: bool = False    # le visiteur demande de montrer / ouvrir
-    slug: str = ""            # pour kind == "project" (slug réel en base)
-    current: bool = False     # pour kind == "experiences" : seulement le poste actuel
+    kind: str                 # greeting | theme | about_me | cv | languages | certifications |
+                              # distinctions | about | approach | values | interests | contact |
+                              # testimonials | skills | experiences | education | projects | project
+    navigate: bool = False    # le visiteur demande de montrer / ouvrir / aller
+    slug: str = ""            # kind == "project" : slug réel en base
+    current: bool = False     # kind == "experiences" : seulement le poste actuel
+    section: str = ""         # kind == "project" : ancre de section (project-problem…)
+    featured: bool = False    # kind == "projects" : seulement les projets mis en avant
+    mode: str = ""            # kind == "theme" : light | dark
 
 
 def _project_aliases(rows: list[dict]) -> dict[str, re.Pattern]:
@@ -166,6 +199,13 @@ async def route_question(question: str) -> Optional[FastRoute]:
     words = len(q.split())
     nav = bool(_NAV.search(q))
 
+    if _GREETING.search(q):
+        return FastRoute("greeting")
+    if _THEME_DARK.search(q):
+        return FastRoute("theme", navigate=True, mode="dark")
+    if _THEME_LIGHT.search(q):
+        return FastRoute("theme", navigate=True, mode="light")
+
     # Noms de projets retirés avant les tests de mots-clés : sinon « CV Chatbot
     # RAG » déclencherait la route CV.
     rows = await canonical.fetch_or_empty("projects")
@@ -175,18 +215,45 @@ async def route_question(question: str) -> Optional[FastRoute]:
     for rx in aliases.values():
         q_rest = rx.sub(" ", q_rest)
 
-    # Pages : aucune donnée nécessaire
+    # Sections du CV : avant la route CV, sinon « les langues de ton CV »
+    # ouvrirait le téléchargement du PDF.
+    if not named:
+        if _LANGUAGES.search(q_rest):
+            return FastRoute("languages", navigate=nav)
+        if _CERTIFICATIONS.search(q_rest):
+            return FastRoute("certifications", navigate=nav)
+        if _DISTINCTIONS.search(q_rest):
+            return FastRoute("distinctions", navigate=True)
+
     if _CV.search(q_rest) and (nav or _PDF.search(q_rest) or words <= 4):
         return FastRoute("cv", navigate=True)
     if _PDF.search(q_rest) and words <= 8:
         return FastRoute("cv", navigate=True)
+    if _ABOUT_ME.search(q):
+        return FastRoute("about_me", navigate=nav)
     if nav and _ABOUT.search(q):
         return FastRoute("about", navigate=True)
-    if nav and _APPROACH.search(q):
+    if nav and _APPROACH.search(q) and not named:
         return FastRoute("approach", navigate=True)
+    # Réponse fixe seulement pour une demande courte de navigation ; une demande
+    # qui ajoute une vraie question (« … et parle-moi de ce qui te motive ») va à l'agent.
+    if nav and _VALUES.search(q) and words <= 8:
+        return FastRoute("values", navigate=True)
+    if nav and _INTERESTS.search(q) and words <= 8:
+        return FastRoute("interests", navigate=True)
 
     if _CONTACT_HOW.search(q):
         return FastRoute("contact", navigate=nav)
+
+    # Section d'un projet précis (problème, approche…) : avant le filtre
+    # qualitatif, qui contient « comment » et « problème ».
+    if len(named) == 1:
+        for anchor, rx in _PROJECT_SECTIONS:
+            if rx.search(q_rest):
+                return FastRoute("project", navigate=nav, slug=named[0], section=anchor)
+    if not named and _BEST_PROJECTS.search(q) and not re.search(r"\b(pourquoi|why)\b", q):
+        return FastRoute("projects", navigate=nav, featured=True)
+
     if _QUALITATIVE.search(q):
         return None
 
@@ -216,8 +283,8 @@ async def route_question(question: str) -> Optional[FastRoute]:
 # GÉNÉRATION — un seul appel Haiku en streaming
 # =============================================================================
 
-_FAST_SYSTEM = """Tu es l'assistant du portfolio de Yann Willy Jordan Pokam Teguia, développeur
-logiciel. Tu INCARNES Yann : première personne (je, mon, mes), tutoiement, ton
+_FAST_SYSTEM = """Tu es l'assistant du portfolio de Yann Willy Jordan Pokam Teguia. Son prénom d'usage est
+JORDAN (jamais « Yann » pour te présenter). Tu INCARNES Jordan : première personne (je, mon, mes), tutoiement, ton
 chaleureux et humble (jamais "expert", jamais "je maîtrise parfaitement").
 
 Règles :
@@ -229,6 +296,10 @@ Règles :
   formation terminée comme en cours.
 - Expériences : respecte le champ « statut » tel quel. Un poste sur appel n'est jamais un
   emploi régulier ni un temps partiel ; un emploi secondaire n'est jamais le poste principal.
+- Témoignages et personnes citées : n'attribue jamais de genre (pas de « il » / « elle ») ;
+  reprends le nom, ou tourne la phrase autrement.
+- Ne dis jamais que tu ne peux pas naviguer, ouvrir une page ou changer l'apparence du site :
+  le site s'en charge.
 - 2 à 4 phrases, ou une courte liste à puces s'il y a 4 éléments ou plus.
 - 1 à 2 emojis maximum. Markdown léger autorisé.
 - Adapte la langue à celle du visiteur.
@@ -299,6 +370,9 @@ def _contact_text(profile: dict) -> str:
     lines = []
     if profile.get("email"):
         lines.append(f"- **Email** : {profile['email']}")
+    if profile.get("telephone"):
+        # Public sur le CV et le site ; affiché tel quel, jamais transmis au LLM
+        lines.append(f"- **Téléphone** : {profile['telephone']}")
     for col, label in (("linkedin", "LinkedIn"), ("github", "GitHub"), ("portfolio", "Portfolio")):
         if profile.get(col):
             lines.append(f"- **{label}** : [{profile[col]}]({profile[col]})")
@@ -357,6 +431,70 @@ async def prepare_fast_answer(route: FastRoute, question: str, history: list[dic
                           guide({"op": "navigate", "path": "/cv"}, {"op": "focus", "target": "cv-experience"}),
                           "cv:sans_pdf")
 
+    if route.kind == "greeting":
+        profile = await canonical.get_profile()
+        name = profile.get("surnom") or "Jordan"
+        title = profile.get("titre_professionnel")
+        who = f"Moi c'est {name}, {title.lower()}" if title else f"Moi c'est {name}"
+        return FastAnswer(_once(f"Salut ! 👋 {who}. Pose-moi tes questions sur mes projets, mon parcours ou "
+                                "mes compétences — je peux aussi te guider dans le site."), "", "greeting")
+
+    if route.kind == "theme":
+        text_ = ("Voilà, le site passe en mode sombre 🌙" if route.mode == "dark"
+                 else "Voilà, le site passe en mode clair ☀️")
+        return FastAnswer(_once(text_), guide({"op": "set_theme", "mode": route.mode}), f"theme:{route.mode}")
+
+    if route.kind == "about_me":
+        profile = await canonical.get_profile()
+        if not profile:
+            return None
+        nav_line = guide({"op": "navigate", "path": "/about"},
+                         {"op": "focus", "target": "about-intro"}) if route.navigate else ""
+        hint = _nav_hint("ma page À propos") if route.navigate else ""
+        hint += "Le visiteur veut me connaître : présente-moi en 2 à 4 phrases à partir du profil.\n\n"
+        return FastAnswer(_stream_llm(question, "Profil :\n" + _llm_data([profile]), history, hint),
+                          nav_line, "about_me")
+
+    if route.kind == "languages":
+        skills = await canonical.fetch_or_empty("skills")
+        langs = [r for r in skills if (r.get("categorie") or "").lower() == "langues"]
+        nav_line = guide({"op": "navigate", "path": "/cv"}, {"op": "focus", "target": "cv-languages"})
+        if not langs:
+            return FastAnswer(_once("Mes langues sont indiquées sur la page CV 🌍"), nav_line, "languages:page")
+        parts = [f"{r['nom'].lower()} ({(r.get('description') or '').lower()})" if r.get("description")
+                 else r["nom"].lower() for r in langs]
+        spoken = parts[0] if len(parts) == 1 else ", ".join(parts[:-1]) + " et " + parts[-1]
+        return FastAnswer(_once(f"Je parle {spoken} 🌍"), nav_line if route.navigate else "", "languages")
+
+    if route.kind == "certifications":
+        rows = canonical.annotate_formations(await canonical.fetch_or_empty("education"))
+        certs = [r for r in rows if re.search(r"certif|pl-?900", normalize(r.get("titre", "")))]
+        nav_line = guide({"op": "navigate", "path": "/cv"}, {"op": "focus", "target": "cv-certifications"})
+        if not certs:
+            return FastAnswer(_once("Mes certifications sont indiquées sur la page CV 📜"), nav_line, "certifications:page")
+        lines = [f"- **{r['titre']}** — {r['statut']}" + (f" : {r['description']}" if r.get("description") else "")
+                 for r in certs]
+        return FastAnswer(_once("Côté certifications 📜\n\n" + "\n".join(lines)),
+                          nav_line if route.navigate else "", "certifications")
+
+    if route.kind == "distinctions":
+        # Pas de table en base pour les permis et distinctions : on renvoie vers
+        # la section du CV, en citant seulement ce qui est en base (projets).
+        projects = await canonical.fetch_or_empty("projects")
+        mentions = [f"{r['titre']} : {res}" for r in projects
+                    for res in (r.get("resultats") or []) if isinstance(res, str) and "mention" in res.lower()]
+        text_ = "Voici mes permis et distinctions, sur la page CV 🏅"
+        if mentions:
+            text_ += "\n\nParmi eux : " + " ; ".join(mentions)
+        return FastAnswer(_once(text_), guide({"op": "navigate", "path": "/cv"},
+                                              {"op": "focus", "target": "cv-distinctions"}), "distinctions")
+
+    if route.kind in ("values", "interests"):
+        target, text_ = (("about-values", "Voici mes valeurs 🤝") if route.kind == "values"
+                         else ("about-interests", "Voici mes centres d'intérêt ✨"))
+        return FastAnswer(_once(text_), guide({"op": "navigate", "path": "/about"},
+                                              {"op": "focus", "target": target}), route.kind)
+
     if route.kind == "about":
         return FastAnswer(_once("Voici ma page À propos 👋"),
                           guide({"op": "navigate", "path": "/about"}, {"op": "focus", "target": "about-intro"}),
@@ -405,18 +543,32 @@ async def prepare_fast_answer(route: FastRoute, question: str, history: list[dic
         return None
 
     if route.kind == "projects":
-        data = "Projets actifs du portfolio :\n" + "\n".join(canonical.format_project_line(r) for r in rows)
+        selected = [r for r in rows if r.get("est_mis_en_avant")] if route.featured else rows
+        selected = selected or rows
+        label = "Projets mis en avant (mes meilleurs projets)" if route.featured else "Projets actifs du portfolio"
+        data = f"{label} :\n" + "\n".join(canonical.format_project_line(r) for r in selected)
         hint = _nav_hint("la grille des projets") if route.navigate else ""
+        if route.featured:
+            hint += "Présente ces projets mis en avant comme mes meilleurs projets.\n\n"
         nav_line = guide({"op": "navigate", "path": "/projects"},
                          {"op": "focus", "target": "projects-grid"}) if route.navigate else ""
-        return FastAnswer(_stream_llm(question, data, history, hint), nav_line, "projects")
+        return FastAnswer(_stream_llm(question, data, history, hint), nav_line,
+                          "projects:featured" if route.featured else "projects")
 
     row = next((r for r in rows if r.get("slug") == route.slug), None)
     if row is None:
         return None
-    hint = _nav_hint("la fiche de ce projet") if route.navigate else ""
+    section_names = {"project-problem": "le problème de départ", "project-approach": "l'approche",
+                     "project-features": "les fonctionnalités", "project-results": "les résultats",
+                     "project-gallery": "les captures", "project-overview": "la vue d'ensemble"}
+    target = route.section or "project-detail"
+    hint = _nav_hint(f"{section_names.get(route.section, 'la fiche')} de ce projet") if route.navigate else ""
+    if route.section:
+        hint += (f"Le visiteur s'intéresse à {section_names[route.section]} de ce projet : concentre-toi "
+                 "dessus, en t'en tenant STRICTEMENT à ce que disent les données. Si elles ne le décrivent "
+                 "pas explicitement, résume ce qui existe sans extrapoler ni ajouter de détails.\n\n")
     nav_line = guide({"op": "open_project", "slug": route.slug},
-                     {"op": "focus", "target": "project-detail"}) if route.navigate else ""
+                     {"op": "focus", "target": target}) if route.navigate else ""
     # Liens ajoutés par le code (jamais recopiés par le LLM) si le visiteur en demande
     links = []
     if _LINK_REQUEST.search(normalize(question)):

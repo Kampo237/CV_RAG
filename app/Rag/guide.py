@@ -1,14 +1,14 @@
 """
 Guidage du site — ligne d'action [[guide]]
-(cf. GUIDE_BACKEND_PROMPT.md et BACKEND_NEON_SOURCE_DE_VERITE.md §2)
+(cf. GUIDE_BACKEND_PROMPT.md, BACKEND_NEON_SOURCE_DE_VERITE.md §2 et le
+contrat du front : validateur du bundle portfolio.jordan-pokam.dev)
 
-Le front coupe la dernière ligne `[[guide]]{"actions":[...]}` avant
-l'affichage markdown et exécute les actions (navigate / open_project / focus).
+Le front coupe tout à partir de [[guide]], puis exécute le JSON dans l'ordre
+(au plus 4 actions). Émettre la ligne = y aller tout de suite.
 
 Ce module :
-  - liste les routes et cibles fixes du site ;
-  - valide les slugs contre les projets ACTIFS de portfolio_app_projet
-    (slug en base = segment /projects/:slug, jamais inventé) ;
+  - liste les routes et ancres acceptées par le front ;
+  - valide les slugs contre les projets ACTIFS de portfolio_app_projet ;
   - fournit la section de prompt à injecter dans les prompts système LLM ;
   - filtre un flux de tokens pour intercepter la ligne [[guide]] et la
     ré-émettre validée à la fin, sans jamais l'afficher au visiteur.
@@ -20,15 +20,22 @@ from typing import Iterable, Optional
 logger = logging.getLogger("rag_pipeline")
 
 GUIDE_MARKER = "[[guide]]"
-MAX_ACTIONS = 3
+MAX_ACTIONS = 4          # le front tronque au-delà (actions.slice(0, 4))
+THEME_MODES = {"light", "dark"}
 
-GUIDE_PATHS = {"/", "/about", "/projects", "/cv", "/testimonials"}
+GUIDE_PATHS = {"/", "/about", "/projects", "/cv", "/testimonials"}   # + /projects/{slug}
 
-# Cibles fixes (data-guide) ; les cartes "project-<slug>" sont validées à part
+# Ancres data-guide du site (hors cartes project-<slug>, validées à part)
 GUIDE_TARGETS = {
-    "home-hero", "home-about", "home-projects", "home-approach", "home-stats",
-    "home-contact", "site-nav", "about-intro", "about-skills", "projects-grid",
-    "project-detail", "cv-download", "cv-experience", "cv-education", "testimonials-list",
+    "home-hero", "home-about", "home-projects", "home-approach", "home-stats", "home-contact",
+    "site-nav", "about-intro", "about-skills", "about-values", "about-interests", "projects-grid",
+    "cv-download", "cv-experience", "cv-education", "cv-languages", "cv-distinctions",
+    "cv-certifications", "testimonials-list",
+}
+# Sections d'une fiche projet : ignorées par le front hors d'une fiche ouverte
+PROJECT_SECTIONS = {
+    "project-detail", "project-overview", "project-problem", "project-approach",
+    "project-features", "project-results", "project-gallery",
 }
 
 
@@ -43,52 +50,69 @@ def guide_prompt(project_lines: Iterable[str]) -> str:
     """
     projects = "\n".join(project_lines) or "(aucun projet actif — n'utilise pas open_project)"
     return f"""────────────────────────────────────────
-## GUIDAGE DANS LE SITE
+## GUIDAGE DANS LE SITE (navigation et thème)
 ────────────────────────────────────────
 
-Tu peux guider le visiteur dans le site, sans jamais prétendre avoir cliqué
-toi-même dans le navigateur.
+Tu PEUX faire naviguer le visiteur dans le site et changer le thème (clair / sombre) :
+le site exécute la ligne d'action que tu écris. Ne dis JAMAIS que tu ne peux pas
+naviguer, rediriger, ouvrir une page ou changer l'apparence.
 
-Quand la question demande de montrer, ouvrir, aller vers ou retrouver quelque
-chose qui existe sur le site, réponds d'abord en une ou deux phrases, puis
-termine par une seule ligne d'action. Cette ligne est une instruction pour le site.
-
-Format exact, dernière ligne du message, rien après :
+La réponse visible vient d'abord. La dernière ligne, et rien d'autre, est l'ordre
+de navigation. Le visiteur ne la voit pas.
 [[guide]]{{"actions":[ ... ]}}
 
+Émettre cette ligne, c'est y aller tout de suite : ne demande pas de confirmation
+(« Je t'amène voir ? »). Si le visiteur demande d'aller quelque part, de montrer,
+d'ouvrir ou de changer le thème, écris la ligne.
+
+Pas de ligne [[guide]] dans trois cas : la réponse suffit, l'endroit n'existe pas sur
+le site, ou la demande est ambiguë (alors demande de préciser).
+
 Règles :
-- Maximum 3 actions, dans l'ordre d'exécution.
-- N'utilise que les opérations, routes, cibles et slugs listés ici. N'invente rien.
-- Jamais d'URL externe, de mailto ni de soumission de formulaire.
-- Question purement conversationnelle → pas de ligne [[guide]].
-- Tu hésites entre deux cibles → demande une précision, pas de ligne [[guide]].
-- Tu peux répondre sans page du site (le détail est déjà dans les données) → réponds, pas de ligne [[guide]].
-- Le texte visible ne contient pas le JSON, pas le mot "guide", et ne décrit pas le format technique.
+- Au plus 4 actions, dans l'ordre d'exécution. Une seule visite (navigate ou open_project).
+- N'utilise que les opérations, routes, ancres et slugs listés ici. N'invente rien.
+- Jamais d'adresse externe, de mailto ni de formulaire.
+- Le texte visible ne contient pas le JSON, pas le mot "guide", et ne décrit pas le format.
 
 Opérations :
-- {{"op":"navigate","path":"/about"}} — path parmi : /  /about  /projects  /cv  /testimonials
-- {{"op":"open_project","slug":"<slug>"}} — slug copié EXACTEMENT de la liste des projets actifs ci-dessous
-- {{"op":"focus","target":"<cible>"}} — project-detail exige un open_project avant
+- {{"op":"navigate","path":"/about"}} — path parmi : /  /about  /projects  /cv  /testimonials  /projects/<slug>
+- {{"op":"focus","target":"<ancre>"}} — défile jusqu'à l'ancre et la surligne
+- {{"op":"open_project","slug":"<slug>"}} — ouvre la fiche (slug copié EXACTEMENT de la liste ci-dessous)
+- {{"op":"set_theme","mode":"dark"}} — mode "light" ou "dark"
+
+Ancres :
+- accueil (/) : home-hero, home-about, home-projects, home-approach, home-stats, home-contact
+- partout : site-nav
+- /about : about-intro, about-skills, about-values, about-interests
+- /projects : projects-grid, project-<slug> (carte d'un projet)
+- fiche projet (après open_project) : project-detail, project-overview, project-problem,
+  project-approach, project-features, project-results, project-gallery
+- /cv : cv-download, cv-experience, cv-education, cv-languages, cv-distinctions, cv-certifications
+- /testimonials : testimonials-list
+Une section de fiche s'enchaîne après open_project ; seule, elle est ignorée.
 
 Correspondances :
 - Liste des projets → navigate /projects puis focus projects-grid
-- Un projet précis → open_project <slug> puis focus project-detail
-- CV ou PDF → navigate /cv puis focus cv-download si le PDF est connu, sinon cv-experience
-- Expérience → navigate /cv puis focus cv-experience
-- Formation → navigate /cv puis focus cv-education
-- Compétences → navigate /about puis focus about-skills
-- Contact → navigate / puis focus home-contact
+- Un projet → open_project <slug> (puis focus d'une section si demandée :
+  problème → project-problem, approche → project-approach, fonctionnalités →
+  project-features, résultats → project-results, captures → project-gallery)
+- CV ou PDF → navigate /cv puis focus cv-download (sinon cv-experience)
+- Expérience / formation / langues / certifications / distinctions → navigate /cv puis
+  cv-experience / cv-education / cv-languages / cv-certifications / cv-distinctions
+- Compétences / valeurs / centres d'intérêt → navigate /about puis about-skills /
+  about-values / about-interests
+- Contact → navigate / puis focus home-contact ; façon de travailler → home-approach
 - Témoignages → navigate /testimonials puis focus testimonials-list
-- Façon de travailler → navigate / puis focus home-approach
-
-Autres cibles : home-hero, home-about, home-projects, home-stats, site-nav,
-about-intro, project-<slug> (carte d'un projet sur /projects).
+- Mode sombre / clair → set_theme dark / light
 
 Projets actifs (titre — slug) :
 {projects}
 
-Exemple — « Montre-moi tes compétences » → une phrase, puis
-[[guide]]{{"actions":[{{"op":"navigate","path":"/about"}},{{"op":"focus","target":"about-skills"}}]}}"""
+Exemples :
+« Emmène-moi aux témoignages » → une phrase, puis
+[[guide]]{{"actions":[{{"op":"navigate","path":"/testimonials"}},{{"op":"focus","target":"testimonials-list"}}]}}
+« Passe en mode sombre » → une phrase, puis
+[[guide]]{{"actions":[{{"op":"set_theme","mode":"dark"}}]}}"""
 
 
 # =============================================================================
@@ -97,31 +121,44 @@ Exemple — « Montre-moi tes compétences » → une phrase, puis
 
 def validate_actions(actions, allowed_slugs: Iterable[str]) -> list[dict]:
     """
-    Garde uniquement les actions connues du site, dans l'ordre, max 3.
-    Les slugs (open_project, cartes project-<slug>) doivent être ceux des
-    projets actifs en base. project-detail n'est gardé qu'après un open_project.
+    Garde uniquement les actions acceptées par le front, dans l'ordre, max 4 :
+    une seule visite (navigate / open_project), slugs = projets actifs en base,
+    sections de fiche seulement après ouverture d'un projet.
     """
     if not isinstance(actions, list):
         return []
 
     slugs = set(allowed_slugs or ())
     clean: list[dict] = []
+    visited = False
     project_opened = False
     for action in actions:
         if not isinstance(action, dict):
             continue
-        op, target = action.get("op"), action.get("target")
-        if op == "navigate" and action.get("path") in GUIDE_PATHS:
-            clean.append({"op": "navigate", "path": action["path"]})
+        op, target, path = action.get("op"), action.get("target"), action.get("path")
+
+        if op in ("navigate", "open_project") and visited:
+            logger.warning(f"[guide] seconde visite ignorée: {action}")
+            continue
+
+        if op == "navigate" and isinstance(path, str) and (
+            path in GUIDE_PATHS or (path.startswith("/projects/") and path[10:] in slugs)
+        ):
+            clean.append({"op": "navigate", "path": path})
+            visited = True
+            project_opened = path.startswith("/projects/")
         elif op == "open_project" and action.get("slug") in slugs:
             clean.append({"op": "open_project", "slug": action["slug"]})
-            project_opened = True
+            visited = project_opened = True
         elif op == "focus" and isinstance(target, str) and (
-            target in GUIDE_TARGETS or (target.startswith("project-") and target[8:] in slugs)
+            target in GUIDE_TARGETS or target in PROJECT_SECTIONS
+            or (target.startswith("project-") and target[8:] in slugs)
         ):
-            if target == "project-detail" and not project_opened:
+            if target in PROJECT_SECTIONS and not project_opened:
                 continue
             clean.append({"op": "focus", "target": target})
+        elif op == "set_theme" and (action.get("mode") or action.get("theme")) in THEME_MODES:
+            clean.append({"op": "set_theme", "mode": action.get("mode") or action.get("theme")})
         else:
             logger.warning(f"[guide] action rejetée: {action}")
         if len(clean) >= MAX_ACTIONS:

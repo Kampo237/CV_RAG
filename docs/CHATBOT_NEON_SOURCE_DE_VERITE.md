@@ -91,12 +91,22 @@ Routeur par regex (aucun appel LLM, aucune reformulation), volontairement conser
 
 | Intention | Réponse | `[[guide]]` |
 |---|---|---|
+| Salutation (« Bonjour ») | texte fixe : prénom d'usage (Jordan) + titre du profil | — |
+| Mode sombre / clair | texte fixe | `set_theme` (`mode: dark` / `light`) |
 | CV / PDF | texte fixe avec `cv_pdf` ; vide → « je n'ai pas l'information » | `/cv` + `cv-download` (ou `cv-experience`) |
-| Contact | texte fixe construit depuis le profil | `/` + `home-contact` si demande de navigation |
-| À propos, façon de travailler | texte fixe | `/about` / `home-approach` |
-| Liste des projets | Haiku sur les projets actifs | `/projects` + `projects-grid` si navigation |
+| Langues | texte fixe depuis les compétences de catégorie « Langues » | `/cv` + `cv-languages` si navigation |
+| Certifications | texte fixe depuis les formations « Certified / PL-900 », avec statut | `/cv` + `cv-certifications` si navigation |
+| Permis et distinctions | texte fixe (pas de table en base) + mentions trouvées dans les projets | `/cv` + `cv-distinctions` |
+| « Parle-moi de toi » | Haiku sur le profil | `/about` + `about-intro` si navigation |
+| Contact | texte fixe construit depuis le profil (email, téléphone, liens) | `/` + `home-contact` si navigation |
+| À propos, façon de travailler, valeurs, centres d'intérêt | texte fixe (demande courte) | `/about` ou `/` + ancre |
+| Liste / meilleurs projets | Haiku sur les projets actifs / mis en avant | `/projects` + `projects-grid` si navigation |
 | Un projet nommé | Haiku sur la ligne du projet | `open_project` + `project-detail` si navigation |
+| Section d'un projet (problème, approche, fonctionnalités, résultats, captures) | Haiku centré sur la section, sans extrapoler | `open_project` + `project-problem`… si navigation |
 | Compétences, expériences, formation, témoignages | Haiku sur la table | section du site si navigation |
+
+Une demande de navigation qui ajoute une vraie question (« emmène-moi aux centres d'intérêt
+et parle-moi de ce qui te motive ») va à l'agent, qui répond et émet la ligne `[[guide]]`.
 
 - Noms de projets reconnus depuis la base (titre, slug) + `EXTRA_ALIASES`.
 - Questions qualitatives (« pourquoi », « comment », « meilleur », comparaison…), plusieurs
@@ -130,11 +140,28 @@ La réponse peut se terminer par une seule ligne :
 [[guide]]{"actions":[{"op":"open_project","slug":"safety-hub"},{"op":"focus","target":"project-detail"}]}
 ```
 
-- Routes et cibles fixes du site dans `GUIDE_PATHS` / `GUIDE_TARGETS`.
-- Slugs (`open_project`, cartes `project-<slug>`) validés contre les **projets actifs en base**.
+Contrat du front (validateur du bundle) :
+
+| Op | Valeur |
+|---|---|
+| `navigate` | `path` : `/`, `/about`, `/projects`, `/cv`, `/testimonials`, `/projects/{slug}` |
+| `focus` | `target` : une ancre de `GUIDE_TARGETS`, une section de fiche, ou `project-<slug>` |
+| `open_project` | `slug` d'un projet actif |
+| `set_theme` | `mode` : `light` ou `dark` (clé **`mode`**) |
+
+- Au plus **4 actions** (le front tronque au-delà), **une seule visite** (`navigate` ou `open_project`).
+- Sections de fiche (`project-detail`, `-overview`, `-problem`, `-approach`, `-features`,
+  `-results`, `-gallery`) seulement après `open_project` ou `navigate /projects/{slug}` : seules, le front les ignore.
+- Slugs validés contre les **projets actifs en base** ; chemins avec `..` ou externes rejetés.
+- Le prompt dit explicitement au modèle qu'il **peut** naviguer et changer le thème, et
+  qu'émettre la ligne vaut exécution immédiate (pas de demande de confirmation).
 - `GuideStreamFilter` intercepte la ligne dans le flux (même coupée entre deux chunks),
-  la valide (max 3 actions, `project-detail` seulement après `open_project`) et la ré-émet à la fin.
-- L'historique enregistre le texte visible, sans la ligne `[[guide]]`.
+  la valide et la ré-émet à la fin. L'historique enregistre le texte visible, sans la ligne.
+- Si le modèle n'écrit que la ligne `[[guide]]`, le texte visible devient « Voilà 👇 »
+  (jamais de réponse vide ni de « rien trouvé »).
+
+Le modèle se présente sous son prénom d'usage, **Jordan** (le site dit Jordan ; le nom
+complet reste Yann Willy Jordan Pokam Teguia).
 
 ---
 

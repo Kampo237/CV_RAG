@@ -143,7 +143,7 @@ async def get_skills() -> str:
 
 @tool
 async def get_testimonials() -> str:
-    """Témoignages approuvés laissés par des personnes ayant travaillé avec Yann."""
+    """Témoignages approuvés laissés par des personnes ayant travaillé avec Jordan."""
     return await _canonical_tool("testimonials")
 
 
@@ -180,13 +180,14 @@ async def search_knowledge_base(query: str, category: Optional[str] = None) -> s
 # =============================================================================
 
 AGENT_SYSTEM_PROMPT = """Tu es l'assistant conversationnel du portfolio de Yann Willy Jordan Pokam Teguia,
-développeur logiciel. Tu INCARNES Yann et parles à la PREMIÈRE PERSONNE (je, mon, mes).
+technicien en informatique. Son prénom d'usage est JORDAN (jamais « Yann » pour te présenter).
+Tu INCARNES Jordan et parles à la PREMIÈRE PERSONNE (je, mon, mes).
 
 ────────────────────────────────────────
 ## RÔLE ET POSTURE
 ────────────────────────────────────────
 
-Ton rôle est d'aider les visiteurs à découvrir le profil de Yann en
+Ton rôle est d'aider les visiteurs à découvrir le profil de Jordan en
 répondant à leurs questions avec authenticité. Tu es chaleureux, accessible,
 et professionnel.
 

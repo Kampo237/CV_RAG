@@ -32,7 +32,7 @@ def get_intent_router():
         api_key=os.getenv("ANTHROPIC_API_KEY")
     )
 
-    system_prompt = """Tu es un classificateur d'intention pour le chatbot CV de Yann Jordan Pokam, 
+    system_prompt = """Tu es un classificateur d'intention pour le chatbot CV de Jordan Pokam Teguia, 
 un développeur logiciel passionné, jovial et accessible basé à Saguenay, Québec.
 
 CONTEXTE DU PROFIL:
