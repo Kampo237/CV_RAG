@@ -18,6 +18,7 @@ vide — retombe sur le pipeline normal (agent). Le routeur est conservateur.
 import os
 import re
 import logging
+import datetime
 import unicodedata
 from dataclasses import dataclass
 from typing import AsyncIterator, Optional
@@ -224,6 +225,8 @@ Règles :
   Jamais de ta mémoire. N'invente rien (dates, technos, résultats, liens).
 - Si les données ne contiennent pas la réponse : dis « Je n'ai pas cette information. »
   Ne propose pas de remplacement, ne promets aucun envoi (ni texto, ni courriel).
+- Formations : respecte le champ « statut » (terminé / en cours) ; ne présente jamais une
+  formation terminée comme en cours.
 - Expériences : respecte le champ « statut » tel quel. Un poste sur appel n'est jamais un
   emploi régulier ni un temps partiel ; un emploi secondaire n'est jamais le poste principal.
 - 2 à 4 phrases, ou une courte liste à puces s'il y a 4 éléments ou plus.
@@ -254,6 +257,7 @@ async def _stream_llm(question: str, data: str, history: list[dict], nav_hint: s
         for m in (history or [])[-4:]
     ) or "Aucun."
     human = (
+        f"Date du jour : {datetime.date.today().isoformat()}\n\n"
         f"Données (lignes de la base du portfolio) :\n{data}\n\n"
         f"Échanges précédents :\n{history_text}\n\n"
         f"{nav_hint}"
@@ -382,6 +386,8 @@ async def prepare_fast_answer(route: FastRoute, question: str, history: list[dic
             logger.info(f"[fast_path] table {route.kind} vide → pipeline normal")
             return None
         hint = _nav_hint("la section correspondante") if route.navigate else ""
+        if route.kind == "education":
+            rows = canonical.annotate_formations(rows)
         if route.kind == "experiences":
             rows = canonical.annotate_experiences(rows)
             main_jobs = [r for r in rows if canonical.is_main_status(r["statut"])]

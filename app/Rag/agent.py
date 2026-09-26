@@ -122,8 +122,14 @@ async def get_experiences() -> str:
 
 @tool
 async def get_education() -> str:
-    """Formation (diplômes, établissements, dates)."""
-    return await _canonical_tool("education")
+    """Formation (diplômes, établissements, dates), avec leur statut calculé
+    (terminé — diplôme obtenu, terminé sans diplôme, ou en cours)."""
+    try:
+        rows = await canonical.fetch("education")
+    except Exception as e:
+        logger.error(f"[tool education] Erreur: {e}")
+        return f"Erreur de lecture de la base: {e}"
+    return canonical.format_rows(canonical.annotate_formations(rows)) if rows else NO_INFO
 
 
 @tool

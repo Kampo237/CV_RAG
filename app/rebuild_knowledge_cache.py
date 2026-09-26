@@ -81,6 +81,8 @@ def build_facts() -> list[dict]:
         rows = canonical.fetch_sync(kind)
         if kind == "experiences":
             rows = canonical.annotate_experiences(rows)   # statut : principal / temps partiel / sur appel
+        elif kind == "education":
+            rows = canonical.annotate_formations(rows)    # statut : terminé / en cours
         for row in rows:
             facts.append(_fact(category, canonical.TABLES[kind], row, _kv(row)))
 

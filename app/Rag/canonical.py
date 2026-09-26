@@ -255,6 +255,18 @@ def annotate_experiences(rows: list[dict]) -> list[dict]:
     return [{**r, "statut": experience_status(r, rows)} for r in rows]
 
 
+def formation_status(row: dict) -> str:
+    """Statut calculé par le code (le modèle ne connaît pas la date du jour)."""
+    if row.get("en_cours"):
+        return "en cours"
+    return "terminé — diplôme obtenu" if row.get("diplome_obtenu") else "terminé (sans diplôme)"
+
+
+def annotate_formations(rows: list[dict]) -> list[dict]:
+    """Copies des lignes avec un champ `statut` (lecture LLM uniquement, pas l'API)."""
+    return [{**r, "statut": formation_status(r)} for r in rows]
+
+
 async def get_project(slug: str) -> Optional[dict]:
     for row in await fetch_or_empty("projects"):
         if row.get("slug") == slug:

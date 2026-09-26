@@ -71,6 +71,18 @@ le code le lit automatiquement. Une expérience à masquer passe à `est_actif =
 
 Pour « où travailles-tu ? » / « ton poste actuel », seul le poste ⭐ est transmis au modèle.
 
+### Statut des formations
+
+Même principe (`annotate_formations`) : `en cours`, `terminé — diplôme obtenu` ou
+`terminé (sans diplôme)`, calculé depuis `en_cours` et `diplome_obtenu`. Le modèle ne
+connaît pas la date du jour : sans ce statut, il présentait un DEC terminé comme « en cours ».
+Le chemin rapide transmet aussi la date du jour dans le message.
+
+### Dates
+
+Les dates ne sont connues qu'au mois (1er du mois) ou à l'année (1er janvier) : ne pas y lire
+un jour précis.
+
 ---
 
 ## 3. Chemin rapide — `app/Rag/fast_path.py`
