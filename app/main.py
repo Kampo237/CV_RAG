@@ -2,12 +2,13 @@
 FastAPI Application - Chatbot CV avec RAG Avancé
 
 Pipeline RAG:
-1. Rate Limiting (optionnel)
+1. Rate Limiting + anti-abus
 2. Récupération historique
+2b. Chemin rapide (projets / fiche projet / CV / pages) : regex + SQL figé
+    en cache + un seul appel Haiku en streaming — sinon :
 3. Reformulation de la question
-4. Routage sémantique (SQL / VECTOR / VECTOR_SQL / OFF_TOPIC)
-5. Récupération du contexte (SQL ou Vectoriel + Rerank)
-6. Génération de la réponse
+4-5. Agent ReAct (RAG_MODE=agent) ou graphe LangGraph (automate)
+6. Génération en streaming + ligne [[guide]] validée en fin de réponse
 7. Sauvegarde de l'interaction
 """
 from fastapi import FastAPI, HTTPException, Depends, Request, APIRouter, UploadFile, File, Form
@@ -118,9 +119,7 @@ from app.Rag import (
     VectorStoreService,
     get_vector_store_service,
     run_rag_graph,          # pipeline La ngGraph unifié
-    run_rag_agent,
-    load_document,
-    semantic_chunk,
+    stream_rag_agent,
 )
 from app.Rag.retrieval import format_context, retrieve_and_rerank
 from app.Rag.generation import (
@@ -130,6 +129,15 @@ from app.Rag.generation import (
     extract_clarification_question,
 )
 from app.Rag.sql_chain import get_sql_chain_raw
+from app.Rag.guide import GuideStreamFilter, guide_suffix
+from app.Rag import canonical
+from app.Rag.fast_path import (
+    route_question,
+    prepare_fast_answer,
+    get_fast_llm,
+    detect_alert,
+    wants_sms,
+)
 
 from dotenv import load_dotenv
 
@@ -162,6 +170,25 @@ async def lifespan(app: FastAPI):
         logger.info("✅ Graphe LangGraph pre-chauffe")
     except Exception as e:
         logger.warning(f"⚠️ Pre-chauffe LangGraph echoue: {e}")
+
+    # Pré-chauffage du chemin rapide, en tâche de fond pour ne pas retarder le
+    # démarrage (Neon peut être en train de se réveiller) :
+    #  - cache des tables canoniques les plus lues (projets, profil) ;
+    #  - client Anthropic : le tout premier appel paie ~2 s d'initialisation
+    #    (client, TLS) une seule fois par process — mesuré 2,7 s à froid contre
+    #    0,5 s ensuite. Un appel d'1 token au boot évite ça au 1er visiteur.
+    async def _warm_fast_path():
+        for kind in ("projects", "profile"):
+            try:
+                await canonical.fetch(kind)
+            except Exception as e:
+                logger.warning(f"⚠️ Pre-chargement cache {kind} echoue: {e}")
+        try:
+            await get_fast_llm().ainvoke("ok", max_tokens=1)
+            logger.info("✅ Client Anthropic pre-chauffe")
+        except Exception as e:
+            logger.warning(f"⚠️ Pre-chauffe client Anthropic echoue: {e}")
+    asyncio.create_task(_warm_fast_path())
 
     yield
     logger.info("👋 Arret de l'application")
@@ -364,6 +391,81 @@ def save_interaction(session_id: str, question: str, answer: str, db: Session):
     logger.debug(f"Interaction sauvegardée pour session {session_id} ({session.message_count} messages)")
 
 
+# -----------------------------------------------------------------------------
+# Cache mémoire de l'historique + écriture en arrière-plan
+#
+# Chaque question lisait l'historique dans Neon avant de pouvoir faire quoi que
+# ce soit (aller-retour réseau, voire réveil du compute), puis réécrivait la
+# session avant de fermer le flux. Désormais :
+#   - lecture : cache mémoire par session (TTL), Neon seulement en cas de miss ;
+#   - écriture : le cache est mis à jour tout de suite, la DB en arrière-plan
+#     sur un thread unique (écritures sérialisées → pas de mise à jour perdue
+#     si deux messages d'une même session arrivent coup sur coup).
+# Valable en mono-worker (comme le rate limiting ci-dessous) : le Dockerfile
+# lance uvicorn sans --workers.
+# -----------------------------------------------------------------------------
+import collections
+from concurrent.futures import ThreadPoolExecutor
+from app.database import SessionLocal
+
+HISTORY_CACHE_TTL = int(os.getenv("HISTORY_CACHE_TTL", "1800"))
+HISTORY_CACHE_MAX = int(os.getenv("HISTORY_CACHE_MAX", "1000"))
+_history_cache: "collections.OrderedDict[str, tuple[float, list]]" = collections.OrderedDict()
+_history_writer = ThreadPoolExecutor(max_workers=1, thread_name_prefix="history-writer")
+
+
+def _remember_history(session_id: str, messages: list) -> None:
+    _history_cache[session_id] = (time.time(), messages)
+    _history_cache.move_to_end(session_id)
+    while len(_history_cache) > HISTORY_CACHE_MAX:
+        _history_cache.popitem(last=False)
+
+
+def _read_history_db(session_id: str) -> list:
+    db = SessionLocal()
+    try:
+        return get_chat_history(session_id, db)
+    finally:
+        db.close()
+
+
+def _write_history_db(session_id: str, question: str, answer: str) -> None:
+    db = SessionLocal()
+    try:
+        save_interaction(session_id, question, answer, db)
+    except Exception as e:
+        db.rollback()
+        logger.error(f"[HISTORY] Sauvegarde échouée (session {session_id[:8]}): {e}")
+    finally:
+        db.close()
+
+
+async def load_history(session_id: str) -> list:
+    """Historique de la session : cache mémoire, sinon Neon (dans un thread)."""
+    hit = _history_cache.get(session_id)
+    if hit and time.time() - hit[0] < HISTORY_CACHE_TTL:
+        return list(hit[1])
+    messages = await asyncio.to_thread(_read_history_db, session_id)
+    _remember_history(session_id, messages)
+    return list(messages)
+
+
+def record_interaction(session_id: str, question: str, answer: str) -> None:
+    """Met à jour le cache immédiatement ; écrit dans Neon en arrière-plan."""
+    hit = _history_cache.get(session_id)
+    current = hit[1] if hit else []
+    updated = (current + [
+        {"role": "user", "content": question},
+        {"role": "assistant", "content": answer},
+    ])[-MAX_HISTORY_MESSAGES:]
+    _remember_history(session_id, updated)
+    _history_writer.submit(_write_history_db, session_id, question, answer)
+
+
+def forget_history(session_id: str) -> None:
+    _history_cache.pop(session_id, None)
+
+
 # =============================================================================
 # RATE LIMITING
 # =============================================================================
@@ -530,6 +632,40 @@ def consume_daily_budget() -> tuple[bool, bool]:
 
 
 # =============================================================================
+# HELPERS DE STREAMING
+# =============================================================================
+
+def _log_first_token(request_id: str, timer: PipelineTimer) -> None:
+    """Latence perçue par le visiteur : objectif < 1 s."""
+    logger.info(f"[{request_id}] ⚡ premier token à {timer.total_time():.0f}ms")
+
+
+async def _automate_tokens(question: str, session_id: str, history: list, rephrased: str):
+    """Mode automate : graphe LangGraph (récupération) puis génération en streaming."""
+    final_state = await run_rag_graph(
+        question=question,
+        session_id=session_id,
+        history=history,
+        rephrased_question=rephrased,
+    )
+    context = final_state.get("context", "")
+    intent = final_state.get("intent", "UNKNOWN")
+    logger.info(f"🎯 intent={intent} sources={final_state.get('sources_count', 0)} ctx_len={len(context)}")
+
+    # Fix E — crédits Anthropic épuisés : message UX propre
+    if context == "ERREUR_CREDITS":
+        yield ("⚠️ Le service IA est temporairement indisponible "
+               "(quota API atteint). Réessaie dans quelques instants "
+               "ou contacte-moi directement sur LinkedIn :)")
+        return
+    if not context and intent != "OFF_TOPIC":
+        return  # l'appelant affiche le message "pas d'informations pertinentes"
+
+    async for token in generate_response(question, context, history):
+        yield token
+
+
+# =============================================================================
 # ROUTE PRINCIPALE - CHAT AVEC LOGS DÉTAILLÉS
 # =============================================================================
 
@@ -551,11 +687,6 @@ async def chat(request: QuestionRequest, http_request: Request):
         logger.info("=" * 60)
         logger.info(f"[{request_id}] 🎤 NOUVELLE QUESTION: {request.question[:100]}...")
         logger.info("=" * 60)
-
-        # Ouvrir une session DB manuellement (le générateur async
-        # ne peut pas utiliser Depends(get_db))
-        from app.database import SessionLocal
-        db = SessionLocal()
 
         try:
             session_id = request.session_id or "anonymous"
@@ -606,14 +737,78 @@ async def chat(request: QuestionRequest, http_request: Request):
             timer.end_step(f"OK ip={ip}")
 
             # =====================================================================
-            # 2. RÉCUPÉRATION HISTORIQUE (depuis PostgreSQL)
+            # 2. HISTORIQUE ∥ ROUTAGE
+            #    L'historique (cache mémoire, sinon Neon) et le routeur du chemin
+            #    rapide (regex + projets actifs en cache) tournent en parallèle :
+            #    le routeur n'a pas besoin de l'historique.
             # =====================================================================
-            timer.start_step("2_HISTORIQUE")
-            history = get_chat_history(session_id, db)
-            timer.end_step(f"{len(history)} messages")
+            timer.start_step("2_HISTORIQUE_ET_ROUTAGE")
+            history, route = await asyncio.gather(
+                load_history(session_id),
+                route_question(request.question),
+            )
+            timer.end_step(f"{len(history)} messages, route={route.kind if route else '-'}")
 
             # =====================================================================
-            # 2B. REFORMULATION (faite une seule fois ici, en amont du pipeline)
+            # 2A. ALERTES AUTONOMES (regex, zéro LLM)
+            #     Remplace le send_sms proactif de l'agent : l'agent n'ouvre
+            #     plus le MCP SMS que sur demande explicite du visiteur.
+            # =====================================================================
+            alert = detect_alert(request.question)
+            if alert and _should_alert(f"{alert}:{session_id}"):
+                await send_alert_sms(
+                    f"{alert}: sess={session_id[:8]} q='{request.question[:120]}'",
+                    level="WARN" if alert == "ALERTE" else "INFO",
+                )
+
+            sms_requested = wants_sms(request.question, history)
+
+            # =====================================================================
+            # 2B. CHEMIN RAPIDE (projets, fiche projet, CV, pages du site)
+            #     Routeur regex → SQL figé en cache → un seul appel Haiku en
+            #     streaming (ou un texte fixe). Pas de reformulation, pas
+            #     d'agent. Si ça ne matche pas ou si les données manquent, on
+            #     continue sur le pipeline normal.
+            # =====================================================================
+            if sms_requested:
+                route = None  # protocole SMS en cours → agent + MCP
+            if route:
+                timer.start_step("2B_FAST_PATH")
+                fast = await prepare_fast_answer(route, request.question, history)
+                timer.end_step(f"{route.kind} → {'rapide' if fast else 'pipeline normal'}")
+
+                if fast:
+                    timer.start_step("6_GENERATION_RAPIDE")
+                    visible = ""
+                    try:
+                        async for token in fast.stream:
+                            if not visible:
+                                _log_first_token(request_id, timer)
+                            visible += token
+                            yield token
+                    except Exception as e:
+                        logger.error(f"[{request_id}] ❌ Erreur chemin rapide: {e}")
+                        if visible:
+                            yield "\n\nDésolé, un problème technique est survenu. Réessaie dans un instant."
+                        else:
+                            yield ("⚠️ Désolé, je rencontre un souci technique côté assistant. "
+                                   "Réessaie dans un instant — ou contacte-moi directement sur LinkedIn :)")
+                        await send_alert_sms(
+                            f"FAST PATH KO sess={session_id[:8]} q='{request.question[:60]}' :: {_summarize_error(e)}",
+                            level="ERROR",
+                        )
+                        timer.end_step("ERREUR")
+                        return
+
+                    suffix = guide_suffix(visible, fast.guide_line)
+                    if suffix:
+                        yield suffix
+                    record_interaction(session_id, request.question, visible)
+                    timer.end_step(fast.label)
+                    return
+
+            # =====================================================================
+            # 2C. REFORMULATION (faite une seule fois ici, en amont du pipeline)
             #
             # Si le message est trop vague pour être reformulé en question
             # autonome (ex: "euhh", "vasy voir..."), on ne lance PAS le
@@ -623,86 +818,67 @@ async def chat(request: QuestionRequest, http_request: Request):
             # et on s'arrête là pour ce tour — le prochain message du visiteur
             # profitera de cet échange dans l'historique pour mieux répondre.
             # =====================================================================
-            timer.start_step("2B_REFORMULATION")
+            timer.start_step("2C_REFORMULATION")
             rephrased_question = await rephrase_question_async(request.question, history)
 
             if is_clarification_request(rephrased_question):
                 clarification = extract_clarification_question(rephrased_question)
                 timer.end_step("CLARIFICATION_DEMANDEE")
                 yield clarification
-                save_interaction(session_id, request.question, clarification, db)
+                record_interaction(session_id, request.question, clarification)
                 return
             timer.end_step(f"'{rephrased_question[:60]}'")
 
             # =====================================================================
-            # 3-5. PIPELINE LANGGRAPH
-            #   route → [sql_execute ⇄ sql_quality ⇄ table_explore]
-            #           [vector | hybrid]
-            #         → synthesize
-            # Le graphe gère automatiquement la boucle cross-table et le
-            # fallback vector si SQL est vide sur toutes les tables.
+            # 3-6. PIPELINE + GÉNÉRATION EN STREAMING
+            #   agent    : ReAct, tokens diffusés dès qu'ils sortent du LLM
+            #   automate : graphe LangGraph puis generate_response (astream)
+            # La ligne [[guide]] éventuelle est interceptée, validée, puis
+            # ré-émise en toute fin de réponse (jamais affichée au visiteur).
             # =====================================================================
-            timer.start_step("3_5_LANGGRAPH")
-            context = ""
-            intent = "UNKNOWN"
-            sources_count = 0
-            standalone_question = request.question
-            final_state: dict = {}      # défaut sûr : évite l'UnboundLocalError si le pipeline lève
-            pipeline_error = False
+            timer.start_step("3_6_PIPELINE")
+            guide_filter = GuideStreamFilter(await canonical.get_active_slugs())
+            visible = ""
             pipeline_error_detail = ""  # vrai détail technique → SMS de diagnostic
 
+            if RAG_MODE == "agent":
+                token_source = stream_rag_agent(
+                    question=request.question,
+                    session_id=session_id,
+                    history=history,
+                    rephrased_question=rephrased_question,
+                    enable_sms=sms_requested,
+                )
+            else:
+                token_source = _automate_tokens(request.question, session_id, history, rephrased_question)
+
             try:
-                if RAG_MODE == "agent":
-                    final_state = await run_rag_agent(
-                        question=request.question,
-                        session_id=session_id,
-                        history=history,
-                        rephrased_question=rephrased_question,
-                    )
-                else:
-                    final_state = await run_rag_graph(
-                        question=request.question,
-                        session_id=session_id,
-                        history=history,
-                        rephrased_question=rephrased_question,
-                    )
-                context           = final_state.get("context", "")
-                intent            = final_state.get("intent", "UNKNOWN")
-                sources_count     = final_state.get("sources_count", 0)
-                standalone_question = final_state.get("rephrased_question", request.question)
-                logger.info(f"[{request_id}] 🎯 intent={intent} sources={sources_count} ctx_len={len(context)}")
-                timer.end_step(f"intent={intent} sources={sources_count}")
+                async for token in token_source:
+                    out = guide_filter.feed(token)
+                    if out:
+                        if not visible:
+                            _log_first_token(request_id, timer)
+                        visible += out
+                        yield out
             except Exception as e:
-                logger.error(f"[{request_id}] ❌ Erreur LangGraph: {e}")
+                logger.error(f"[{request_id}] ❌ Erreur pipeline: {e}")
                 logger.error(traceback.format_exc())
-                pipeline_error = True
                 pipeline_error_detail = _summarize_error(e)
-                timer.end_step("ERREUR (contexte vide)")
 
-            # =====================================================================
-            # 6. GÉNÉRATION DE LA RÉPONSE (STREAM)
-            # =====================================================================
-            timer.start_step("6_GENERATION")
+            rest, guide_line = guide_filter.finish()
+            if rest:
+                visible += rest
+                yield rest
 
-            # Fix E — crédits Anthropic épuisés : message UX propre
-            if context == "ERREUR_CREDITS":
-                yield (
-                    "⚠️ Le service IA est temporairement indisponible "
-                    "(quota API atteint). Réessaie dans quelques instants "
-                    "ou contacte-moi directement sur LinkedIn :)"
-                )
-                save_interaction(session_id, request.question, "Erreur credits", db)
-                timer.end_step("CREDITS_EPUISES")
-                return
-
-            # Pipeline LangGraph en échec (ex. modèle indisponible) → message embelli
-            # pour le visiteur, MAIS SMS avec le vrai détail technique pour Jordan.
-            if pipeline_error:
-                yield (
-                    "⚠️ Désolé, je rencontre un souci technique côté assistant. "
-                    "Réessaie dans un instant — ou contacte-moi directement sur LinkedIn :)"
-                )
-                save_interaction(session_id, request.question, "Erreur pipeline", db)
+            # Pipeline en échec (ex. modèle indisponible) → message embelli pour
+            # le visiteur, MAIS SMS avec le vrai détail technique pour Jordan.
+            if pipeline_error_detail:
+                if visible:
+                    yield "\n\nDésolé, un problème technique est survenu. Réessaie dans un instant."
+                else:
+                    yield ("⚠️ Désolé, je rencontre un souci technique côté assistant. "
+                           "Réessaie dans un instant — ou contacte-moi directement sur LinkedIn :)")
+                record_interaction(session_id, request.question, visible or "Erreur pipeline")
                 await send_alert_sms(
                     f"PIPELINE KO sess={session_id[:8]} q='{request.question[:60]}' :: {pipeline_error_detail}",
                     level="ERROR",
@@ -710,43 +886,17 @@ async def chat(request: QuestionRequest, http_request: Request):
                 timer.end_step("PIPELINE_ERREUR")
                 return
 
-            try:
-                streamed_answer = ""  # Accumuler la réponse complète
+            if not visible.strip():
+                visible = "Je n'ai pas trouvé d'informations pertinentes pour répondre à cela."
+                yield visible
 
-                if RAG_MODE == "agent":
-                    agent_answer = final_state.get("answer", "")
-                    if not agent_answer:
-                        yield "Je n'ai pas trouvé d'informations pertinentes pour répondre à cela."
-                        streamed_answer = "Pas d'informations pertinentes."
-                    else:
-                        words = agent_answer.split(" ")
-                        for i, word in enumerate(words):
-                            yield word + (" " if i < len(words) - 1 else "")
-                            await asyncio.sleep(0.03)
-                        streamed_answer = agent_answer
-                else:
-                    if not context and intent not in ["OFF_TOPIC"]:
-                        fallback = "Je n'ai pas trouvé d'informations pertinentes dans mon contexte pour répondre à cela."
-                        yield fallback
-                        streamed_answer = fallback
-                    else:
-                        async for token in generate_response(request.question, context, history):
-                            yield token
-                            streamed_answer += token
+            suffix = guide_suffix(visible, guide_line)
+            if suffix:
+                yield suffix
 
-                # Sauvegarder la VRAIE réponse en DB
-                save_interaction(session_id, request.question, streamed_answer, db)
-
-                timer.end_step("STREAMED")
-            except Exception as e:
-                logger.error(f"Erreur stream: {e}")
-                # Message propre pour l'utilisateur — pas de stack trace
-                yield "Désolé, un problème technique est survenu. Réessaie dans un instant."
-                # Alerte SMS en arrière-plan avec le vrai contexte technique
-                await send_alert_sms(
-                    f"Erreur stream session {session_id[:8]}: {_summarize_error(e)}",
-                    level="ERROR"
-                )
+            # Sauvegarder la VRAIE réponse (texte visible, sans la ligne [[guide]])
+            record_interaction(session_id, request.question, visible)
+            timer.end_step(f"STREAMED guide={'oui' if guide_line else 'non'}")
 
         except Exception as e:
             logger.error(f"[{request_id}] 💥 ERREUR FATALE: {str(e)}")
@@ -758,16 +908,72 @@ async def chat(request: QuestionRequest, http_request: Request):
                 f"CRASH FATAL {request_id}: {_summarize_error(e)}",
                 level="ERROR"
             )
-        finally:
-            db.close()
 
 
     return StreamingResponse(event_stream(), media_type="text/plain")
 
 
 # =============================================================================
+# API PORTFOLIO — lecture seule des tables canoniques Neon
+# (BACKEND_NEON_SOURCE_DE_VERITE.md §5 : le site lit les mêmes lignes que le
+# chat ; le navigateur ne reçoit jamais de chaîne de connexion Neon)
+# =============================================================================
+
+async def _canonical_rows(kind: str) -> list[dict]:
+    try:
+        rows = await canonical.fetch(kind)
+    except Exception as e:
+        logger.error(f"❌ /portfolio {kind}: {e}")
+        raise HTTPException(status_code=503, detail="Base de données indisponible")
+    return [canonical.public_row(r) for r in rows]
+
+
+@app.get("/portfolio/profile")
+async def portfolio_profile():
+    """Ligne portfolio_app_infopersonnelle (sans champ secret ni téléphone)."""
+    rows = await _canonical_rows("profile")
+    if not rows:
+        raise HTTPException(status_code=404, detail="Profil non renseigné")
+    return rows[0]
+
+
+@app.get("/portfolio/projects")
+async def portfolio_projects():
+    """Projets actifs (est_actif = true), triés par ordre."""
+    return await _canonical_rows("projects")
+
+
+@app.get("/portfolio/projects/{slug}")
+async def portfolio_project(slug: str):
+    """Un projet actif ; 404 si le slug n'existe pas ou si le projet est inactif."""
+    for row in await _canonical_rows("projects"):
+        if row.get("slug") == slug:
+            return row
+    raise HTTPException(status_code=404, detail="Projet introuvable")
+
+
+@app.get("/portfolio/experiences")
+async def portfolio_experiences():
+    return await _canonical_rows("experiences")
+
+
+@app.get("/portfolio/education")
+async def portfolio_education():
+    return await _canonical_rows("education")
+
+
+@app.get("/portfolio/skills")
+async def portfolio_skills():
+    return await _canonical_rows("skills")
+
+
+# =============================================================================
 # ROUTES D'ADMINISTRATION
 # =============================================================================
+
+# `datas` / embeddings = cache dérivé des tables canoniques (reconstruit par
+# app/rebuild_knowledge_cache.py). Seules ces catégories y sont admises.
+KNOWLEDGE_CATEGORIES = {"identite", "experience", "formation", "competence", "projet", "contact"}
 
 @app.post("/knowledge/add")
 async def add_knowledge(
@@ -777,6 +983,14 @@ async def add_knowledge(
 ):
     """Ajoute des connaissances au vector store"""
     logger.info(f"📥 Ajout de {len(requests)} connaissances")
+    invalid = sorted({r.category for r in requests} - KNOWLEDGE_CATEGORIES)
+    if invalid:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Catégories refusées {invalid} — autorisées : {sorted(KNOWLEDGE_CATEGORIES)}. "
+                   "Les faits s'écrivent dans les tables canoniques puis le cache se reconstruit "
+                   "avec app/rebuild_knowledge_cache.py.",
+        )
     from app.Rag.vector_store import EmbeddingRequest as VSEmbeddingRequest
 
     vs_requests = [
@@ -802,7 +1016,7 @@ async def ingest_document(
         db: Session = Depends(get_db)
 ):
     """
-    Ingère un document complet (PDF, DOCX, MD, TXT).
+    [DÉSACTIVÉ — renvoie 410] Ingérait un document complet (PDF, DOCX, MD, TXT).
 
     Le document est :
     1. Parsé pour extraire le texte brut
@@ -817,58 +1031,16 @@ async def ingest_document(
     Returns:
         Résumé de l'ingestion : nombre de chunks créés, taille du document, etc.
     """
-    logger.info(f"📄 Ingestion document: {file.filename} (category={category})")
+    # Désactivé (BACKEND_NEON_SOURCE_DE_VERITE.md §7) : ré-ingérer un document
+    # entier ajoute des voisins qui se recouvrent au lieu de remplacer les
+    # mauvais chunks. Les faits vont dans les tables canoniques, puis :
+    #     python -m app.rebuild_knowledge_cache --apply
+    raise HTTPException(
+        status_code=410,
+        detail="Ingestion de documents désactivée : écrire les faits dans les tables "
+               "portfolio_app_* puis lancer `python -m app.rebuild_knowledge_cache --apply`.",
+    )
 
-    # Étape 1 — Lecture du fichier
-    file_bytes = await file.read()
-
-    if len(file_bytes) > 10 * 1024 * 1024:  # 10 Mo max
-        raise HTTPException(status_code=413, detail="Fichier trop volumineux (max 10 Mo)")
-
-    # Étape 2 — Extraction du texte brut
-    try:
-        text = load_document(file.filename, file_bytes)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-    logger.info(f"📄 Texte extrait: {len(text)} caractères")
-
-    # Étape 3 — Chunking sémantique
-    chunks = semantic_chunk(text, min_chunk_size=200)
-    logger.info(f"📄 {len(chunks)} chunks générés")
-
-    if not chunks:
-        raise HTTPException(status_code=400, detail="Aucun chunk généré (document trop court ?)")
-
-    # Étape 4 — Préparation des EmbeddingRequest
-    from app.Rag.vector_store import EmbeddingRequest as VSEmbeddingRequest
-
-    vs_requests = []
-    for i, chunk in enumerate(chunks):
-        vs_requests.append(VSEmbeddingRequest(
-            message_text=chunk,
-            category=category,
-            metadata={
-                "source_file": file.filename,
-                "chunk_index": i,
-                "total_chunks": len(chunks),
-                "document_type": document_type,
-                "ingestion_method": "semantic_chunker",
-            }
-        ))
-
-    # Étape 5 — Vectorisation et stockage
-    result = await vs.save_infos(vs_requests, db)
-
-    return JSONResponse(content={
-        "success": True,
-        "filename": file.filename,
-        "text_length": len(text),
-        "chunks_created": len(chunks),
-        "category": category,
-        "average_chunk_size": sum(len(c) for c in chunks) // len(chunks),
-        "details": result,
-    })
 
 @app.get("/stats/")
 async def get_stats(db: db_dependency):
@@ -1008,6 +1180,7 @@ async def get_history(session_id: str, db: Session = Depends(get_db)):
 @app.delete("/history/{session_id}")
 async def clear_history(session_id: str, db: Session = Depends(get_db)):
     """Efface l'historique d'une session dans PostgreSQL"""
+    forget_history(session_id)
     session = db.query(models.ChatSession).filter(
         models.ChatSession.session_id == session_id
     ).first()

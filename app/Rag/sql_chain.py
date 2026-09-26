@@ -149,6 +149,7 @@ RÈGLES SQL:
 5. Pour extraire un champ JSON de datas.extradatas : extradatas->>'entreprise'
 6. Pour la table datas : les colonnes sont id, corpus, category, extradatas, created_at
 7. Pour portfolio_app_projet : ne suppose PAS corpus ni extradatas — ce n'est pas la même table
+8. Pour portfolio_app_projet : TOUJOURS WHERE est_actif = TRUE
 """),
         ("human", "Question: {question}\n\nSQL:")
     ])
@@ -239,7 +240,7 @@ SCHÉMA:
 table datas:
     id          INTEGER PRIMARY KEY
     corpus      TEXT NOT NULL
-    category    VARCHAR(100)  -- valeurs: 'experience', 'competence', 'formation', 'projet'
+    category    VARCHAR(100)  -- valeurs: 'identite', 'experience', 'formation', 'competence', 'projet', 'contact'
     extradatas  JSON DEFAULT {{}}  -- ex: {{"entreprise":"...","date_debut":"...","technologies":[...]}}
     created_at  TIMESTAMP
 
@@ -289,6 +290,7 @@ RÈGLES SQL:
 4. JSON tableau : technologies::text ILIKE '%React%'
 5. JSON champ : extradatas->>'entreprise'
 6. portfolio_app_projet n'a PAS de colonne corpus ni extradatas
+7. portfolio_app_projet : TOUJOURS WHERE est_actif = TRUE
 """),
         ("human", "{question}")
     ])

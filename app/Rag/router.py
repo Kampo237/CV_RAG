@@ -26,6 +26,9 @@ def get_intent_router():
     llm = ChatAnthropic(
         model_name="claude-sonnet-5",
         # `temperature` est refusé par ce modèle (400 invalid_request_error) — ne pas le passer.
+        # Classification en un mot : la réflexion (activée par défaut sur ce
+        # modèle) n'apporte rien et ajoute de la latence.
+        thinking={"type": "disabled"},
         api_key=os.getenv("ANTHROPIC_API_KEY")
     )
 

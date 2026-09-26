@@ -171,7 +171,8 @@ async def retrieve_and_rerank(
     query: str,
     vector_store_service,
     initial_k: int = 10,
-    final_k: int = 3
+    final_k: int = 3,
+    category: Optional[str] = None,
 ) -> List[Document]:
     """
     Pipeline complet: Recherche vectorielle + Reranking
@@ -181,12 +182,13 @@ async def retrieve_and_rerank(
         vector_store_service: Instance de VectorStoreService
         initial_k: Nombre de documents à récupérer initialement
         final_k: Nombre de documents après reranking
+        category: filtre de catégorie appliqué avant le tri par similarité
     
     Returns:
         Liste des documents les plus pertinents
     """
     # Étape 1: Recherche vectorielle large (rappel)
-    raw_docs = await vector_store_service.similarity_search(query, k=initial_k)
+    raw_docs = await vector_store_service.similarity_search(query, k=initial_k, category=category)
     
     # Étape 2: Reranking pour précision
     refined_docs = await rerank_results_async(query, raw_docs, top_k=final_k)

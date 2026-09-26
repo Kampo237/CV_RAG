@@ -259,10 +259,12 @@ class VectorStoreService:
 
     # -------------------------- RAG simple --------------------------
 
-    async def similarity_search(self, query: str, k: int = 10) -> List[Document]:
+    async def similarity_search(self, query: str, k: int = 10, category: Optional[str] = None) -> List[Document]:
+        """Recherche vectorielle ; `category` filtre AVANT le tri par similarité (top-k dans la catégorie)."""
         vector_store = self.get_vector_store()
         loop = asyncio.get_running_loop()
-        return await loop.run_in_executor(None, lambda: vector_store.similarity_search(query, k=k))
+        flt = {"category": category} if category else None
+        return await loop.run_in_executor(None, lambda: vector_store.similarity_search(query, k=k, filter=flt))
 
     # -------------------------- Retriever --------------------------
 

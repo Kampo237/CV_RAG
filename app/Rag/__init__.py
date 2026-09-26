@@ -19,7 +19,7 @@ from .vector_store import VectorStoreService, get_vector_store_service
 from .retrieval import rerank_results
 from .generation import get_generation_chain, rephrase_question
 from .graph import run_rag_graph, get_rag_graph
-from .agent import run_rag_agent
+from .agent import run_rag_agent, stream_rag_agent
 from .document_loader import load_document
 from .chunking import semantic_chunk
 
@@ -34,6 +34,7 @@ __all__ = [
     'run_rag_graph',
     'get_rag_graph',
     'run_rag_agent',
+    'stream_rag_agent',
     'load_document',
     'semantic_chunk',
 ]

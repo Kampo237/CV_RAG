@@ -18,6 +18,9 @@ from typing import AsyncGenerator
 import re, time, asyncio
 import logging
 
+from app.Rag.guide import guide_prompt
+from app.Rag import canonical
+
 # Import optionnel de langsmith pour le tracing
 try:
     from langsmith import traceable
@@ -186,11 +189,48 @@ Question reformulée:""")
         print(f"Erreur reformulation: {e}")
         return question  # Fallback: question originale
 
+# Marqueurs d'une question qui dépend de l'historique (texte sans accents,
+# minuscules) : pronoms / démonstratifs de rappel, relances, réponses courtes.
+_FOLLOW_UP = re.compile(
+    r"\b(ca|cela|ceci|celui|celle|ceux|celles|celui-ci|celui-la|celle-ci|celle-la|"
+    r"lequel|laquelle|lesquels|lesquelles|elle|elles|ils|lui|leur|leurs|dessus|"
+    r"la-dessus|ce projet|cette (experience|techno|entreprise|formation)|ces projets|"
+    r"le premier|le deuxieme|le second|le dernier|la premiere|la derniere|"
+    r"pareil|aussi|encore|autre chose|plus de details|dis-m'en|dis m'en|"
+    r"developpe|precise|continue|oui|non|ok|okay|d'accord|vas-y|vasy)\b"
+    r"|^(et|mais|puis|alors|sinon|donc)\b"
+)
+
+
+def _strip_accents(text: str) -> str:
+    text = unicodedata.normalize("NFKD", (text or "").lower().replace("’", "'"))
+    return "".join(c for c in text if not unicodedata.combining(c))
+
+
+def needs_rephrase(question: str, history: List[dict]) -> bool:
+    """
+    Vrai seulement si la question ne tient pas seule : sans historique, ou
+    si elle ne contient aucun marqueur de rappel et fait plus de 3 mots, on
+    évite l'appel LLM de reformulation (~0,5-1 s avant le premier token).
+    Les messages très courts ("ok", "euhh", "et React ?") passent toujours
+    par le LLM : c'est lui qui les reformule ou demande une clarification.
+    """
+    if not history:
+        return False
+    q = _strip_accents(question).strip()
+    if len(q.split()) <= 3:
+        return True
+    return bool(_FOLLOW_UP.search(q))
+
+
 async def rephrase_question_async(question: str, history: List[dict]) -> str:
     """
     Version asynchrone de rephrase_question.
-    Délègue au sync via un thread pour ne pas bloquer la boucle d'événements.
+    Question autonome (cf. needs_rephrase) → nettoyage local, sans LLM.
+    Sinon délègue au sync via un thread pour ne pas bloquer la boucle d'événements.
     """
+    if not needs_rephrase(question, history):
+        return clean_and_fix(question)
     loop = asyncio.get_event_loop()
     try:
         rephrased = await loop.run_in_executor(
@@ -208,6 +248,9 @@ async def rephrase_question_async(question: str, history: List[dict]) -> str:
 # CHAÎNE DE GÉNÉRATION FINALE
 # =============================================================================
 
+_generation_chain = None
+
+
 def get_generation_chain():
     """
     Crée la chaîne de génération de réponse finale
@@ -220,6 +263,10 @@ def get_generation_chain():
     Returns:
         Chaîne LangChain exécutable
     """
+    global _generation_chain
+    if _generation_chain is not None:
+        return _generation_chain
+
     llm = get_llm(temperature=0.2)
     
     generation_prompt = ChatPromptTemplate.from_messages([
@@ -227,16 +274,6 @@ def get_generation_chain():
 Yann Willy Jordan Pokam Teguia.
 Tu INCARNES Yann et parles TOUJOURS À LA PREMIÈRE PERSONNE 
 (je, mon, mes, j'ai...).
-
-────────────────────────────────────────
-## 🎯 CONTEXTE
-────────────────────────────────────────
-
-Je suis Yann, jeune développeur logiciel diplômé en Techniques 
-de l'informatique au Cégep de Chicoutimi (Saguenay, Québec).
-Passionné par la tech, je construis des applications web, 
-des systèmes IA, et j'aspire à devenir chef de projet et 
-entrepreneur.
 
 ────────────────────────────────────────
 ## 🎭 PERSONNALITÉ
@@ -253,26 +290,14 @@ entrepreneur.
 ────────────────────────────────────────
 
 ✅ CORRECT :
-- "J'ai développé ce projet en Python..."
+- "J'ai développé ce projet..."
 - "Mes compétences principales sont..."
 - "Mon parcours m'a permis de..."
-- "Je maîtrise Docker et AWS..."
 
 ❌ INCORRECT :
 - "Yann a développé..."
 - "Les compétences de Yann sont..."
 - "Son parcours lui a permis..."
-
-────────────────────────────────────────
-## 💼 MES COMPÉTENCES CLÉS
-────────────────────────────────────────
-
-Backend   : C# .NET, Python (Django / FastAPI)
-Frontend  : React, TypeScript, WPF/MVVM
-IA / ML   : RAG, LangChain, pgvector, Claude API, GPT
-Bases de données : PostgreSQL, SQL Server, Entity Framework
-DevOps    : Docker, AWS (EC2, RDS), CI/CD
-Autres    : Architecture MVVM, REST API, Git
 
 ────────────────────────────────────────
 ## 😊 UTILISATION DES EMOJIS
@@ -307,10 +332,11 @@ Règles :
 ────────────────────────────────────────
 
 1. Parle TOUJOURS à la première personne
-2. Base tes réponses UNIQUEMENT sur le contexte RAG fourni
-3. Si l'information est absente du contexte, dis-le 
-   poliment : "Je n'ai pas cette info sous la main, 
-   mais tu peux me contacter directement !"
+2. Base tes réponses UNIQUEMENT sur le contexte fourni (lignes de la base),
+   jamais sur ta mémoire. Les « Données structurées » priment sur le
+   « Contexte documentaire » en cas de contradiction.
+3. Si l'information est absente du contexte : "Je n'ai pas cette information."
+   Pas de remplacement, pas de promesse d'envoi.
 4. Ne jamais inventer de données (dates, projets, 
    technologies, employeurs)
 5. Reste focalisé sur le profil professionnel
@@ -331,42 +357,15 @@ Règles :
   pour entretenir la conversation
 
 ────────────────────────────────────────
-## 💬 EXEMPLES DE RÉPONSES
-────────────────────────────────────────
-
-Question : "Parle-moi de toi"
-Réponse  : "👋 Salut ! Je suis Yann, développeur logiciel 
-passionné basé à Saguenay. 💻 Je suis diplômé en 
-Techniques de l'informatique au Cégep de Chicoutimi, 
-et j'adore construire des apps web, des systèmes IA 
-et relever des défis techniques. 
-Tu veux en savoir plus sur mes projets ou mes compétences ? 🚀"
-
-Question : "Quelles sont tes compétences ?"
-Réponse  : "💪 Mes forces principales tournent autour du 
-développement full-stack et de l'IA. Je travaille avec 
-Python (Django/FastAPI), C# .NET, React côté frontend, 
-et j'ai une bonne expérience des systèmes RAG avec 
-LangChain et Claude. 🐳 Pour le déploiement, j'utilise 
-Docker et AWS. Tu veux creuser une techno en particulier ?"
-
-Question : "T'as fait des projets en IA ?"
-Réponse  : "🌟 Oui ! Mon projet le plus avancé en IA est 
-mon chatbot CV — un système RAG complet avec FastAPI, 
-PostgreSQL + pgvector, Voyage AI pour les embeddings 
-et Claude comme LLM. Tu me parles en ce moment même 
-grâce à lui ! 😄 J'ai aussi travaillé sur d'autres 
-intégrations IA dans des projets académiques. 
-Tu veux que je te détaille l'architecture ?"
-
-────────────────────────────────────────
 ## 🔒 LIMITES
 ────────────────────────────────────────
 
 - Ne donne pas d'informations personnelles sensibles 
   (adresse physique, numéro de téléphone personnel)
 - Redirige vers l'email ou LinkedIn pour tout contact direct
-- Ne réponds pas aux questions hors sujet professionnel"""),
+- Ne réponds pas aux questions hors sujet professionnel
+
+{guide}"""),
         
         ("human", """Contexte disponible:
 {context}
@@ -380,7 +379,9 @@ Réponse:""")
     ])
     
     chain = generation_prompt | llm | StrOutputParser()
-    return chain.with_config({"run_name": "Generation_Chain"})
+    # Chaîne construite une seule fois : réutilise le client HTTP (keep-alive)
+    _generation_chain = chain.with_config({"run_name": "Generation_Chain"})
+    return _generation_chain
 
 async def generate_response(question: str,context: str,history: Optional[List[dict]] = None) -> str:
     """
@@ -404,10 +405,14 @@ async def generate_response(question: str,context: str,history: Optional[List[di
             for msg in history[-4:]  # Derniers 2 échanges
         ])
 
+    # Section guide avec les slugs réels des projets actifs (variable de
+    # template : le JSON qu'elle contient n'est pas interprété par le prompt)
+    projects = await canonical.fetch_or_empty("projects")
     payload = {
         "context": context,
         "question": question,
-        "history": history_text or "Aucun historique."
+        "history": history_text or "Aucun historique.",
+        "guide": guide_prompt(f"- {r.get('titre')} — {r.get('slug')}" for r in projects if r.get("slug")),
     }
 
     retry = 0

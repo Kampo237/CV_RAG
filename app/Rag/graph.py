@@ -121,7 +121,7 @@ def _get_db(table_name: str) -> SQLDatabase:
 _TABLE_SCHEMA = {
     "datas": (
         "id (INT PK), corpus (TEXT), "
-        "category (VARCHAR: 'experience'|'competence'|'formation'|'projet'), "
+        "category (VARCHAR: 'identite'|'experience'|'formation'|'competence'|'projet'|'contact'), "
         "extradatas (JSON: {entreprise, date_debut, date_fin, technologies, niveau...}), "
         "created_at (TIMESTAMP)"
     ),
@@ -131,7 +131,8 @@ _TABLE_SCHEMA = {
         "fonctionnalites (JSONB), resultats (JSONB), "
         "technologies (JSONB: [\"React\",\"TypeScript\"...]), "
         "url_github (VARCHAR), url_demo (VARCHAR), date_realisation (DATE), "
-        "est_mis_en_avant (BOOLEAN), est_actif (BOOLEAN), ordre (INT)"
+        "est_mis_en_avant (BOOLEAN), est_actif (BOOLEAN), ordre (INT) "
+        "— TOUJOURS filtrer WHERE est_actif = TRUE"
     ),
 }
 
@@ -186,7 +187,9 @@ Regles :
     * emploi/stage/entreprise/duree       → category = 'experience'
     * diplome/etudes/cours                → category = 'formation'
     * projet realise                      → category = 'projet'
+    * identite / contact / cv             → category = 'identite' ou 'contact'
     * doute : PAS de filtre category, cherche dans corpus avec ILIKE
+- Si table portfolio_app_projet : TOUJOURS WHERE est_actif = TRUE
 
 Question : {question}
 
