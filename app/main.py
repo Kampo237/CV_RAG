@@ -11,7 +11,7 @@ Pipeline RAG:
 6. Génération en streaming + ligne [[guide]] validée en fin de réponse
 7. Sauvegarde de l'interaction
 """
-from fastapi import FastAPI, HTTPException, Depends, Request, APIRouter, UploadFile, File, Form
+from fastapi import FastAPI, Header, HTTPException, Depends, Request, APIRouter, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional, Annotated
@@ -110,6 +110,8 @@ class PipelineTimer:
 # =============================================================================
 
 from app import models
+from fastapi.security import HTTPAuthorizationCredentials
+from app.auth import require_admin, check_admin_token, bearer_scheme
 from app.database import engine, get_db
 
 # Imports RAG
@@ -981,7 +983,8 @@ KNOWLEDGE_CATEGORIES = {"identite", "experience", "formation", "competence", "pr
 async def add_knowledge(
         requests: List[EmbeddingRequest],
         vs: VectorStoreService = Depends(get_vector_store_service),
-        db: Session = Depends(get_db)
+        db: Session = Depends(get_db),
+        _: None = Depends(require_admin),
 ):
     """Ajoute des connaissances au vector store"""
     logger.info(f"📥 Ajout de {len(requests)} connaissances")
@@ -1015,7 +1018,8 @@ async def ingest_document(
         category: str = Form(...),
         document_type: str = Form("document_uploade"),
         vs: VectorStoreService = Depends(get_vector_store_service),
-        db: Session = Depends(get_db)
+        db: Session = Depends(get_db),
+        _: None = Depends(require_admin),
 ):
     """
     [DÉSACTIVÉ — renvoie 410] Ingérait un document complet (PDF, DOCX, MD, TXT).
@@ -1045,50 +1049,48 @@ async def ingest_document(
 
 
 @app.get("/stats/")
-async def get_stats(db: db_dependency):
+async def get_stats(db: db_dependency, _: None = Depends(require_admin)):
     """Statistiques de la base de données"""
     logger.debug("📊 Récupération des stats...")
     try:
-        total_embeddings = db.query(models.Embeddings).count()
+        from sqlalchemy import func, text
+
         total_datas = db.query(models.Datas).count()
-        print(total_embeddings, total_datas)
-
-        from sqlalchemy import func
-        categories = db.query(
-            models.Embeddings.category,
-            func.count(models.Embeddings.id)
-        ).group_by(models.Embeddings.category).all()
-
-        category_counts = {cat: count for cat, count in categories}
-
-        logger.debug(f"📊 Stats: {total_embeddings} embeddings, {total_datas} datas")
+        categories = (
+            db.query(models.Datas.category, func.count(models.Datas.id))
+            .group_by(models.Datas.category)
+            .all()
+        )
+        total_embeddings = db.execute(text("SELECT COUNT(*) FROM langchain_pg_embedding")).scalar()
 
         return {
             "success": True,
-            "embeddings": {
-                "total": total_embeddings,
-                "by_category": category_counts
-            },
+            "embeddings": {"total": total_embeddings},
             "datas": {
-                "total": total_datas
-            }
+                "total": total_datas,
+                "by_category": {cat: count for cat, count in categories},
+            },
         }
     except Exception as e:
-        logger.error(f"❌ Erreur stats: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Erreur: {str(e)}")
+        logger.error(f"❌ Erreur stats: {e}")
+        raise HTTPException(status_code=500, detail="Statistiques indisponibles")
 
 
 @app.get("/comments/")
 async def get_comments(
         db: db_dependency,
         approved_only: bool = True,
-        limit: int = 10
+        limit: int = 10,
+        credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
 ):
     """
     Récupère les témoignages.
     - approved_only=True : (défaut) ne montre que ceux validés (pour le site public).
-    - approved_only=False : montre tout (pour l'admin dashboard).
+    - approved_only=False : montre tout (pour l'admin dashboard) — clé admin requise.
     """
+    if not approved_only:
+        check_admin_token(credentials.credentials if credentials else None)
+
     query = db.query(models.Testimonial)
 
     if approved_only:
@@ -1118,7 +1120,8 @@ async def add_comment(testimonial: TestimonialCreate, db: db_dependency):
 async def update_comment_status(
         comment_id: int,
         status: TestimonialUpdateStatus,
-        db: db_dependency
+        db: db_dependency,
+        _: None = Depends(require_admin),
 ):
     """
     Route Admin pour approuver/rejeter ou mettre en avant un commentaire.
@@ -1143,7 +1146,7 @@ async def update_comment_status(
 
 
 @app.delete("/comments/{comment_id}")
-async def delete_comment(comment_id: int, db: db_dependency):
+async def delete_comment(comment_id: int, db: db_dependency, _: None = Depends(require_admin)):
     """Supprime un commentaire"""
     comment = db.query(models.Testimonial).filter(models.Testimonial.id == comment_id).first()
     if not comment:
@@ -1156,7 +1159,7 @@ async def delete_comment(comment_id: int, db: db_dependency):
 
 
 @app.delete("/clear/{category}")
-async def clear_category(category: str, db: db_dependency):
+async def clear_category(category: str, db: db_dependency, _: None = Depends(require_admin)):
     """Supprimer toutes les entrées d'une catégorie"""
     logger.warning(f"🗑️ Suppression catégorie: {category}")
     try:
@@ -1173,7 +1176,7 @@ async def clear_category(category: str, db: db_dependency):
 
 
 @app.get("/history/{session_id}")
-async def get_history(session_id: str, db: Session = Depends(get_db)):
+async def get_history(session_id: str, db: Session = Depends(get_db), _: None = Depends(require_admin)):
     """Récupère l'historique d'une session depuis PostgreSQL"""
     history = get_chat_history(session_id, db)
     return {"session_id": session_id, "history": history, "count": len(history)}
@@ -1198,7 +1201,7 @@ async def clear_history(session_id: str, db: Session = Depends(get_db)):
 
 
 @app.get("/logs/")
-async def get_recent_logs():
+async def get_recent_logs(_: None = Depends(require_admin)):
     """Récupère les dernières lignes de log"""
     try:
         with open('../rag_pipeline.log', 'r', encoding='utf-8') as f:

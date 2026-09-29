@@ -119,26 +119,55 @@ def _get_db(table_name: str) -> SQLDatabase:
 # =============================================================================
 
 _TABLE_SCHEMA = {
-    "datas": (
-        "id (INT PK), corpus (TEXT), "
-        "category (VARCHAR: 'identite'|'experience'|'formation'|'competence'|'projet'|'contact'), "
-        "extradatas (JSON: {entreprise, date_debut, date_fin, technologies, niveau...}), "
-        "created_at (TIMESTAMP)"
-    ),
     "portfolio_app_projet": (
-        "id (INT PK), titre (VARCHAR), slug (VARCHAR UNIQUE), "
-        "description_courte (VARCHAR), description (TEXT), contexte (TEXT), "
-        "fonctionnalites (JSONB), resultats (JSONB), "
-        "technologies (JSONB: [\"React\",\"TypeScript\"...]), "
-        "url_github (VARCHAR), url_demo (VARCHAR), date_realisation (DATE), "
-        "est_mis_en_avant (BOOLEAN), est_actif (BOOLEAN), ordre (INT) "
-        "— TOUJOURS filtrer WHERE est_actif = TRUE"
+        "id, titre, slug, description_courte, description, contexte, "
+        "fonctionnalites (TEXT JSON), resultats (TEXT JSON), technologies (TEXT JSON), "
+        "url_github, url_demo, date_realisation, est_mis_en_avant, est_actif, ordre "
+        "— TOUJOURS WHERE est_actif = TRUE"
+    ),
+    "portfolio_app_experience": (
+        "id, titre, entreprise, type_experience, lieu, date_debut, date_fin, en_cours, "
+        "description, technologies (JSONB), realisations (JSONB), ordre_affichage, est_actif "
+        "— WHERE est_actif = TRUE"
+    ),
+    "portfolio_app_formation": (
+        "id, titre, etablissement, lieu, date_debut, date_fin, en_cours, description, "
+        "diplome_obtenu, mention, ordre_affichage, est_actif — WHERE est_actif = TRUE"
+    ),
+    "portfolio_app_competence": (
+        "id, nom, categorie, niveau, description, ordre_affichage, est_actif "
+        "— WHERE est_actif = TRUE"
+    ),
+    "portfolio_app_infopersonnelle": (
+        "id, nom_complet, surnom, titre_professionnel, email, localisation, bio_courte, "
+        "bio_complete, cv_pdf, linkedin, github, portfolio, disponible, recherche_type "
+        "— ne jamais sélectionner la colonne telephone"
     ),
 }
 
 
-def _get_next_table(explored: List[str]) -> str:
+def _table_order(question: str) -> list[str]:
+    """Met en tête la table canonique qui correspond à la question. Jamais `datas`."""
+    q = (question or "").lower()
+    first: list[str] = []
+
+    def add(table: str, words: tuple[str, ...]) -> None:
+        if table not in first and any(word in q for word in words):
+            first.append(table)
+
+    add("portfolio_app_projet", ("projet", "safety", "cchic", "ecrin", "écrin", "wpf", "portfolio"))
+    add("portfolio_app_experience", ("travail", "emploi", "expérience", "experience", "poste", "stage", "garda"))
+    add("portfolio_app_formation", ("formation", "diplôme", "diplome", "cégep", "cegep", "étude", "etude", "certif"))
+    add("portfolio_app_competence", ("compétence", "competence", "techno", "langage", "python", "react", "stack"))
+    add("portfolio_app_infopersonnelle", ("contact", "courriel", "email", "linkedin", "cv", "pdf", "qui es"))
     for table in SQL_TABLE:
+        if table not in first:
+            first.append(table)
+    return first
+
+
+def _next_canonical(question: str, explored: List[str]) -> str:
+    for table in _table_order(question):
         if table not in explored:
             return table
     return ""
@@ -181,15 +210,9 @@ Regles :
 - LIMIT 10
 - Recherche textuelle : ILIKE '%terme%'
 - Champ JSONB tableau : technologies::text ILIKE '%React%'
-- Champ JSON objet : extradatas->>'entreprise'
-- Si table datas, utilise ce guide de categorie :
-    * technologie/langage/outil/framework → category = 'competence'
-    * emploi/stage/entreprise/duree       → category = 'experience'
-    * diplome/etudes/cours                → category = 'formation'
-    * projet realise                      → category = 'projet'
-    * identite / contact / cv             → category = 'identite' ou 'contact'
-    * doute : PAS de filtre category, cherche dans corpus avec ILIKE
-- Si table portfolio_app_projet : TOUJOURS WHERE est_actif = TRUE
+- N'utilise JAMAIS la table datas
+- Si la table a est_actif : TOUJOURS WHERE est_actif = TRUE
+- Ne sélectionne jamais la colonne telephone
 
 Question : {question}
 
@@ -201,6 +224,10 @@ SQL:"""
 
         if not clean_sql.strip().upper().startswith("SELECT"):
             return "ERREUR_SQL: Requete invalide generee"
+        from app.Rag.sql_chain import canonical_sql_or_error
+        refused = canonical_sql_or_error(clean_sql)
+        if refused:
+            return refused
 
         result = executor.invoke(clean_sql)
         return result if result else "Aucun resultat"
@@ -241,7 +268,7 @@ async def route_node(state: RAGState) -> dict:
 async def sql_execute_node(state: RAGState) -> dict:
     question = state["rephrased_question"]
     explored = state.get("explored_tables", [])
-    target   = _get_next_table(explored) or "datas"
+    target   = _next_canonical(question, explored) or SQL_TABLE[0]
 
     loop   = asyncio.get_running_loop()              # Fix B
     result = await loop.run_in_executor(
@@ -265,10 +292,11 @@ async def sql_quality_node(state: RAGState) -> dict:
     conf=0.5 → table_explore (reessai)
     conf=0.0 → vector (fallback)
     """
+    question   = state.get("rephrased_question", "")
     result     = state.get("sql_result", "")
     iterations = state.get("sql_iterations", 0)
     explored   = state.get("explored_tables", [])
-    next_t     = _get_next_table(explored)
+    next_t     = _next_canonical(question, explored)
 
     # Propagation immédiate si crédits épuisés (Fix E)
     if result == "ERREUR_CREDITS":

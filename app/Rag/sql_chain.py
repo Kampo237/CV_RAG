@@ -37,37 +37,63 @@ DB_URL = os.getenv("DATABASE_URL") or URL_DATABASE
 # Tables à utiliser pour les requêtes SQL
 # NOTE: langchain_pg_embedding est la table interne du vector store — on l'exclut
 # pour éviter que le LLM tente du SQL sur des embeddings binaires
-SQL_TABLE = ["datas", "portfolio_app_projet"]
+# `datas` est un cache dérivé. Le SQL ne le lit plus : les faits sont dans les tables canoniques.
+SQL_TABLE = [
+    "portfolio_app_projet",
+    "portfolio_app_experience",
+    "portfolio_app_formation",
+    "portfolio_app_competence",
+    "portfolio_app_infopersonnelle",
+]
+
+
+# Tables citées après FROM / JOIN (les fonctions du type EXTRACT(YEAR FROM …)
+# sont retirées avant l'analyse pour ne pas être prises pour des tables).
+_TABLE_REF = re.compile(r"\b(?:from|join)\s+(\"?[a-zA-Z_][\w.]*\"?)", re.IGNORECASE)
+_FROM_FUNCS = re.compile(r"\b(?:extract|substring|trim|overlay)\s*\([^)]*\)", re.IGNORECASE)
+
+
+def canonical_sql_or_error(sql: str) -> str | None:
+    """
+    Garde des requêtes générées par un LLM. Refuse :
+      - ce qui n'est pas un SELECT unique ;
+      - toute lecture du cache `datas` ;
+      - toute table hors des tables canoniques (SQL_TABLE) — chat_sessions,
+        testimonials, faq… ne sont jamais lisibles par ce chemin ;
+      - la colonne telephone, y compris via SELECT * sur le profil.
+    """
+    if not sql or not sql.strip().upper().startswith("SELECT"):
+        return "ERREUR: Requête SQL invalide"
+    if re.search(r"\bdatas\b", sql, re.IGNORECASE):
+        return "ERREUR_SQL: la table datas n'est pas une source de faits"
+    if ";" in sql.strip().rstrip(";"):
+        return "ERREUR_SQL: une seule requête à la fois"
+    if re.search(r"\btelephone\b", sql, re.IGNORECASE):
+        return "ERREUR_SQL: la colonne telephone n'est pas lisible"
+    tables = {t.strip('"').split(".")[-1].lower() for t in _TABLE_REF.findall(_FROM_FUNCS.sub(" ", sql))}
+    refused = sorted(tables - set(SQL_TABLE))
+    if refused:
+        return f"ERREUR_SQL: tables non autorisées : {', '.join(refused)}"
+    if "portfolio_app_infopersonnelle" in tables and re.search(r"(select|,)\s*(\w+\.)?\*", sql, re.IGNORECASE):
+        return "ERREUR_SQL: liste les colonnes du profil (pas de SELECT *)"
+    return None
 
 
 def extract_sql_query(text: str) -> str:
-    """
-    Extrait uniquement la requête SQL de la sortie du LLM
-
-    Le LLM peut générer:
-    - "Question: ... SQLQuery: SELECT ..."
-    - "SQLQuery: SELECT ..."
-    - "SELECT ..."
-    - "```sql SELECT ... ```"
-
-    Cette fonction extrait uniquement le SELECT.
-    """
+    """Extrait uniquement le SELECT de la sortie du modèle."""
     if not text:
         return ""
 
     text = text.strip()
 
-    # Pattern 1: SQLQuery: SELECT ...
     match = re.search(r'SQLQuery:\s*(SELECT.+?)(?:;|$)', text, re.IGNORECASE | re.DOTALL)
     if match:
         return match.group(1).strip() + ";"
 
-    # Pattern 2: ```sql ... ```
     match = re.search(r'```sql\s*(SELECT.+?)\s*```', text, re.IGNORECASE | re.DOTALL)
     if match:
         return match.group(1).strip()
 
-    # Pattern 3: SELECT ... directement
     match = re.search(r'(SELECT.+?)(?:;|$)', text, re.IGNORECASE | re.DOTALL)
     if match:
         return match.group(1).strip() + ";"
@@ -113,43 +139,29 @@ SCHÉMA COMPLET:
 
 CARTE DE ROUTAGE (utilise-la AVANT de générer le SQL):
 
-  EXPERIENCES → table datas, category = 'experience'
-    emplois, stages, entreprises, durée de travail, années d'expérience
-    Ex: "Tu as travaillé où?" / "Combien d'années chez Globatech?"
+  EXPERIENCES → portfolio_app_experience WHERE est_actif = TRUE
+    emplois, stages, entreprises
 
-  COMPETENCES → table datas, category = 'competence'
-    technologies, langages, frameworks, outils, niveaux
-    IMPORTANT : "expérience en React/Python/C#/..." = compétence, PAS expérience !
-    Ex: "Quel est ton niveau en React?" / "Tu connais Python?" / "Expérience en TypeScript?"
+  COMPETENCES → portfolio_app_competence WHERE est_actif = TRUE
+    technologies, langages, frameworks. "expérience en React" = compétence.
 
-  FORMATION → table datas, category = 'formation'
-    diplômes, études, cégep, cours
-    Ex: "Quel diplôme tu as?" / "Tu as étudié où?"
+  FORMATION → portfolio_app_formation WHERE est_actif = TRUE
+    diplômes, études, cégep
 
-  PROJETS_LISTE → table portfolio_app_projet
-    lister, compter, filtrer des projets
-    Ex: "Combien de projets?" / "Projets en React?"
+  PROJETS_LISTE → portfolio_app_projet WHERE est_actif = TRUE
+  PROJETS_DETAIL → portfolio_app_projet WHERE est_actif = TRUE
+  IDENTITE / CONTACT → portfolio_app_infopersonnelle
+    jamais la colonne telephone
 
-  PROJETS_DETAIL → table portfolio_app_projet
-    détails d'un projet précis, date, technologies utilisées
-    Ex: "Décris SuperCChic" / "Ton projet le plus récent?"
-
-  MIXTE → deux SELECT indépendants (datas ET portfolio_app_projet)
-    questions mélant compétences/expériences ET projets
-    Ex: "Projets en C# et ton niveau C#?" → deux SELECT séparés par point-virgule
-
-  DOUTE sur la catégorie datas → NE PAS filtrer par category,
-    cherche directement dans corpus avec ILIKE '%terme%'
+  N'utilise JAMAIS la table datas.
 
 RÈGLES SQL:
 1. Génère UNIQUEMENT la requête SQL, sans commentaire ni explication
 2. Utilise ILIKE '%mot%' pour les recherches textuelles
 3. Limite à 10 résultats (LIMIT 10)
-4. Pour filtrer un JSONB : technologies::text ILIKE '%React%'
-5. Pour extraire un champ JSON de datas.extradatas : extradatas->>'entreprise'
-6. Pour la table datas : les colonnes sont id, corpus, category, extradatas, created_at
-7. Pour portfolio_app_projet : ne suppose PAS corpus ni extradatas — ce n'est pas la même table
-8. Pour portfolio_app_projet : TOUJOURS WHERE est_actif = TRUE
+4. Pour filtrer un texte JSON : technologies::text ILIKE '%React%'
+5. Pas de colonne corpus ni extradatas
+6. Si la table a est_actif : TOUJOURS WHERE est_actif = TRUE
 """),
         ("human", "Question: {question}\n\nSQL:")
     ])
@@ -172,8 +184,9 @@ RÈGLES SQL:
 
     def execute_sql(sql: str) -> str:
         try:
-            if not sql or not sql.strip().upper().startswith("SELECT"):
-                return "ERREUR: Requête SQL invalide"
+            refused = canonical_sql_or_error(sql)
+            if refused:
+                return refused
             result = execute_query.invoke(sql)
             return result if result else "Aucun résultat trouvé"
         except Exception as e:
@@ -236,13 +249,9 @@ def get_sql_chain_raw():
 Génère UNIQUEMENT la requête SQL, sans explication.
 
 SCHÉMA:
-
-table datas:
-    id          INTEGER PRIMARY KEY
-    corpus      TEXT NOT NULL
-    category    VARCHAR(100)  -- valeurs: 'identite', 'experience', 'formation', 'competence', 'projet', 'contact'
-    extradatas  JSON DEFAULT {{}}  -- ex: {{"entreprise":"...","date_debut":"...","technologies":[...]}}
-    created_at  TIMESTAMP
+Les faits sont dans portfolio_app_projet, portfolio_app_experience,
+portfolio_app_formation, portfolio_app_competence, portfolio_app_infopersonnelle.
+N'utilise JAMAIS la table datas. Ne sélectionne jamais telephone.
 
 table portfolio_app_projet:
     id                  INTEGER PRIMARY KEY
@@ -265,32 +274,21 @@ table portfolio_app_projet:
 
 CARTE DE ROUTAGE (utilise-la AVANT de générer le SQL):
 
-  EXPERIENCES → datas WHERE category = 'experience'
-    emplois, stages, entreprises, durée de travail
-
-  COMPETENCES → datas WHERE category = 'competence'
-    technologies, langages, frameworks, outils, niveaux
-    ATTENTION : "expérience en React/Python/..." = compétence, PAS expérience !
-
-  FORMATION → datas WHERE category = 'formation'
-    diplômes, études, cégep, cours
-
-  PROJETS_LISTE / PROJETS_DETAIL → portfolio_app_projet
-    lister, compter, filtrer, détailler des projets
-
-  MIXTE → deux SELECT séparés par un point-virgule
-    questions mélant compétences/expériences ET projets
-
-  DOUTE sur la catégorie → cherche dans corpus avec ILIKE, sans filtre category
+  EXPERIENCES → portfolio_app_experience WHERE est_actif = TRUE
+  COMPETENCES → portfolio_app_competence WHERE est_actif = TRUE
+  FORMATION → portfolio_app_formation WHERE est_actif = TRUE
+  PROJETS → portfolio_app_projet WHERE est_actif = TRUE
+  IDENTITE → portfolio_app_infopersonnelle
+  N'utilise JAMAIS la table datas.
 
 RÈGLES SQL:
 1. UNIQUEMENT SELECT, pas de DML
 2. ILIKE '%mot%' pour les recherches textuelles
 3. LIMIT 10
-4. JSON tableau : technologies::text ILIKE '%React%'
-5. JSON champ : extradatas->>'entreprise'
-6. portfolio_app_projet n'a PAS de colonne corpus ni extradatas
-7. portfolio_app_projet : TOUJOURS WHERE est_actif = TRUE
+4. technologies::text ILIKE '%React%'
+5. Pas de corpus ni extradatas
+6. Si est_actif existe : TOUJOURS WHERE est_actif = TRUE
+7. Ne jamais sélectionner telephone
 """),
         ("human", "{question}")
     ])
@@ -307,12 +305,11 @@ RÈGLES SQL:
         logger.debug(f"[RAW] SQL extrait: {clean_sql}")
 
         try:
-            if clean_sql.strip().upper().startswith("SELECT"):
-                result = execute_query.invoke(clean_sql)
-                return result if result else "Aucun résultat"
-            else:
-                logger.warning(f"[RAW] Requête invalide générée: {clean_sql[:100]}")
-                return "ERREUR_SQL: Requête invalide"
+            refused = canonical_sql_or_error(clean_sql)
+            if refused:
+                return refused
+            result = execute_query.invoke(clean_sql)
+            return result if result else "Aucun résultat"
         except Exception as e:
             logger.error(f"[RAW] Erreur exécution SQL: {e}")
             return f"ERREUR_SQL: {str(e)}"
