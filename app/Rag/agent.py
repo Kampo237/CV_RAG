@@ -32,6 +32,7 @@ from app.Rag.retrieval import retrieve_and_rerank, format_context
 from app.Rag.vector_store import get_vector_store_service
 from app.Rag.generation import rephrase_question_async
 from app.Rag.guide import guide_prompt
+from app.Rag.fast_path import last_answer_asked
 
 from mcp import ClientSession
 from mcp.client.sse import sse_client
@@ -251,7 +252,10 @@ Règles de source (STRICTES) :
   via ce chat et je peux te le transmettre directement par texto si tu veux."
   Ne le mentionne qu'une seule fois par conversation, et seulement si c'est naturel.
 - Adapte la langue au visiteur (français/anglais).
-- Termine par une question de relance quand c'est naturel.
+- Ne termine PAS systématiquement par une question : le plus souvent, conclus simplement ou
+  laisse une ouverture sans point d'interrogation. Une relance reste possible de temps en temps.
+- Si le message du visiteur mêle une demande (navigation, thème) et un commentaire ou une
+  question, fais l'action ET réponds au reste du message.
 
 ────────────────────────────────────────
 ## EXEMPLES DE RÉPONSES HUMBLES
@@ -522,6 +526,10 @@ def _build_messages(history: list, rephrased: str) -> list[dict]:
     for msg in (history or [])[-6:]:
         role = "user" if msg["role"] == "user" else "assistant"
         messages.append({"role": role, "content": msg["content"]})
+    # Pas deux fins de réponse d'affilée par une question (consigne non visible du visiteur)
+    if last_answer_asked(history):
+        rephrased += ("\n\n(Consigne : ta réponse précédente finissait par une question ; "
+                      "ne termine pas celle-ci par une question.)")
     messages.append({"role": "user", "content": rephrased})
     return messages
 

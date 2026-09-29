@@ -146,6 +146,19 @@ def detect_alert(question: str) -> Optional[str]:
     return None
 
 
+NO_QUESTION_HINT = ("Ta réponse précédente se terminait déjà par une question : cette fois, ne "
+                    "termine PAS par une question.\n\n")
+
+
+def last_answer_asked(history: list[dict]) -> bool:
+    """True si la dernière réponse de l'assistant finissait par une question (emojis ignorés)."""
+    for msg in reversed(history or []):
+        if msg.get("role") == "assistant":
+            tail = re.sub(r"[^\w?!.)»\"']+$", "", str(msg.get("content", "")).strip())
+            return tail.endswith("?")
+    return False
+
+
 def wants_sms(question: str, history: list[dict]) -> bool:
     """
     True si le visiteur demande explicitement à transmettre un message, ou si
@@ -171,7 +184,8 @@ class FastRoute:
                               # testimonials | skills | experiences | education | projects | project
     navigate: bool = False    # le visiteur demande de montrer / ouvrir / aller
     slug: str = ""            # kind == "project" : slug réel en base
-    current: bool = False     # kind == "experiences" : seulement le poste actuel
+    current: bool = False     # kind == "experiences" : seulement le poste actuel ;
+                              # kind == "theme" : le message contient autre chose à quoi répondre
     section: str = ""         # kind == "project" : ancre de section (project-problem…)
     featured: bool = False    # kind == "projects" : seulement les projets mis en avant
     mode: str = ""            # kind == "theme" : light | dark
@@ -201,10 +215,13 @@ async def route_question(question: str) -> Optional[FastRoute]:
 
     if _GREETING.search(q):
         return FastRoute("greeting")
+    # Thème : commande seule → réponse fixe ; message qui dit autre chose en
+    # plus (« j'aime l'honnêteté… repasse en mode clair ») → le modèle y
+    # répond ET le thème change (current=True marque ce cas).
     if _THEME_DARK.search(q):
-        return FastRoute("theme", navigate=True, mode="dark")
+        return FastRoute("theme", navigate=True, mode="dark", current=words > 6)
     if _THEME_LIGHT.search(q):
-        return FastRoute("theme", navigate=True, mode="light")
+        return FastRoute("theme", navigate=True, mode="light", current=words > 6)
 
     # Noms de projets retirés avant les tests de mots-clés : sinon « CV Chatbot
     # RAG » déclencherait la route CV.
@@ -303,7 +320,9 @@ Règles :
 - 2 à 4 phrases, ou une courte liste à puces s'il y a 4 éléments ou plus.
 - 1 à 2 emojis maximum. Markdown léger autorisé.
 - Adapte la langue à celle du visiteur.
-- Termine par une courte question de relance quand c'est naturel.
+- Ne termine PAS systématiquement par une question. Le plus souvent, conclus simplement ou
+  laisse une ouverture qui donne envie d'en savoir plus, sans point d'interrogation. Une
+  question de relance reste possible de temps en temps, quand elle apporte vraiment quelque chose.
 - N'écris jamais de ligne technique, de JSON ni le mot "guide"."""
 
 _llm_fast: Optional[ChatAnthropic] = None
@@ -327,6 +346,8 @@ async def _stream_llm(question: str, data: str, history: list[dict], nav_hint: s
         f"{'Visiteur' if m['role'] == 'user' else 'Moi'}: {m['content']}"
         for m in (history or [])[-4:]
     ) or "Aucun."
+    if last_answer_asked(history):
+        nav_hint += NO_QUESTION_HINT
     human = (
         f"Date du jour : {datetime.date.today().isoformat()}\n\n"
         f"Données (lignes de la base du portfolio) :\n{data}\n\n"
@@ -440,9 +461,18 @@ async def prepare_fast_answer(route: FastRoute, question: str, history: list[dic
                                 "mes compétences — je peux aussi te guider dans le site."), "", "greeting")
 
     if route.kind == "theme":
+        theme_line = guide({"op": "set_theme", "mode": route.mode})
+        mode_label = "sombre" if route.mode == "dark" else "clair"
+        if route.current:
+            profile = await canonical.get_profile()
+            hint = (f"Le site passe en mode {mode_label} en même temps (c'est déjà géré). Mentionne-le en "
+                    "quelques mots, puis réponds vraiment au reste du message du visiteur (commentaire, "
+                    "question, ressenti), en 1 à 3 phrases.\n\n")
+            return FastAnswer(_stream_llm(question, "Profil :\n" + _llm_data([profile]) if profile else "Aucune.",
+                                          history, hint), theme_line, f"theme:{route.mode}:reponse")
         text_ = ("Voilà, le site passe en mode sombre 🌙" if route.mode == "dark"
                  else "Voilà, le site passe en mode clair ☀️")
-        return FastAnswer(_once(text_), guide({"op": "set_theme", "mode": route.mode}), f"theme:{route.mode}")
+        return FastAnswer(_once(text_), theme_line, f"theme:{route.mode}")
 
     if route.kind == "about_me":
         profile = await canonical.get_profile()
