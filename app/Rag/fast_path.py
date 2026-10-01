@@ -356,7 +356,12 @@ async def _stream_llm(question: str, data: str, history: list[dict], nav_hint: s
         f"Données (lignes de la base du portfolio) :\n{data}\n\n"
         f"Échanges précédents :\n{history_text}\n\n"
         f"{nav_hint}"
-        f"Question du visiteur : {question}"
+        f"Question du visiteur : {question}\n\n"
+        # Rappel en fin de message : placé seulement dans le prompt système,
+        # Haiku l'ignorait (« un environnement que je maîtrise bien »).
+        "Rappel de ton : n'emploie jamais le verbe « maîtriser » (ni « je maîtrise », ni « maîtrise bien ») "
+        "ni le mot « expert ». Varie tes tournures (« j'ai travaillé avec », « je l'utilise pour », "
+        "« je suis à l'aise avec »…) au lieu de répéter toujours la même ouverture."
     )
     async for chunk in get_fast_llm().astream([SystemMessage(_FAST_SYSTEM), HumanMessage(human)]):
         content = chunk.content
