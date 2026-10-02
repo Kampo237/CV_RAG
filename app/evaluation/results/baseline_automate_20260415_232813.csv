@@ -1,0 +1,301 @@
+user_input,response,reference,retrieved_contexts,_intent_expected,_intent_actual
+Parle-moi de toi,"Salut! 👋 Je suis **Yann Willy Jordan Pokam Teguia**, un développeur passionné basé à Chicoutimi, Québec. 
+
+Je suis actuellement **étudiant finissant** en Techniques de l'informatique au Cégep de Chicoutimi, avec une spécialisation en **Conception et Développement d'applications** (diplôme prévu en mai 2026). À 21 ans, j'apporte une perspective internationale puisque je suis né au Cameroun avant de m'établir au Canada — ce qui m'a donné une grande adaptabilité et ouverture d'esprit. 🌍
+
+Ce qui me définit vraiment, c'est ma **passion pour l'informatique** et tout ce qui met en jeu la logique, le raisonnement poussé et les défis techniques. D'ailleurs, le fait que tu interagisses avec ce chatbot IA en ce moment même est une bonne illustration de ma philosophie : je crois en l'utilisation créative de la technologie pour se démarquer et montrer ses vraies compétences. 💻
+
+Je suis quelqu'un qui aime **résoudre des problèmes**, apprendre continuellement et repousser mes limites. Mon CV électronique interactif reflète exactement ça — une volonté de démontrer non seulement mes compétences techniques, mais aussi le type d'employé innovant et réfléchi que je peux être.
+
+Y a-t-il un aspect spécifique de mon profil que tu aimerais explorer? 😊","Yann Willy Jordan Pokam Teguia est un jeune diplômé en Techniques de l'informatique au Cégep de Chicoutimi, passionné par les systèmes intelligents, la logique et les projets qui allient rigueur et créativité.","[""[Source 1 - Général]\nJe ne prends pas position sur des sujets politiques, religieux ou personnels. Mon objectif ici est de représenter mon profil professionnel.\n(Pertinence: 0.53)\n\n---\n\n[Source 2 - Général]\nJe m'appelle Yann Willy Jordan Pokam Teguia et je suis étudiant finissant en Techniques de l'informatique au Cégep de Chicoutimi, spécialisation Conception et Développement d'applications (DEC prévu mai 2026). Je suis passionné d'informatique et de tous ses aspects qui mettent en jeu",VECTOR,AGENT
+Quelle est ta philosophie de code ?,"Ma philosophie de code repose sur quelques principes fondamentaux : 💻
+
+**D'abord, comprendre avant de coder.** Je crois qu'un bon développeur ne se limite pas à écrire du code : il comprend le besoin, structure la solution et anticipe les erreurs possibles. C'est cette compréhension qui fait la différence entre du code qui fonctionne et du code qui *dure*.
+
+**Ensuite, la qualité avant la vitesse.** Je privilégie la clarté de la structure et la maintenabilité avant tout. Un bon projet est un projet que quelqu'un d'autre peut reprendre facilement — c'est un acte de respect envers mes collègues et mon futur moi-même ! 😊
+
+**Et enfin, l'interface entre logique et créativité.** Je suis passionné par cet espace où la logique humaine rencontre la logique machine — c'est là que la créativité technique prend tout son sens. ✨
+
+En résumé : **clarté, maintenabilité, et une compréhension profonde du problème** avant de sauter à la solution. C'est comme construire une maison — les fondations doivent être solides avant de décorer les murs !
+
+Y a-t-il un aspect particulier de mon approche que tu aimerais explorer ?","Il privilégie la qualité du code, la clarté de la structure et la maintenabilité. Un bon projet est un projet que quelqu'un d'autre peut reprendre facilement. Il préfère les solutions élégantes et performantes aux solutions rapides.","[""[Source 1 - Philosophie]\nJe crois qu’un bon développeur ne se limite pas à écrire du code : il comprend le besoin, structure la solution et anticipe les erreurs possibles.\n(Pertinence: 0.46)\n\n---\n\n[Source 2 - Profil]\nJe privilégie la qualité du code, la clarté de la structure et la maintenabilité avant tout. Un bon projet est un projet que quelqu’un d’autre peut reprendre facilement.\n(Pertinence: 0.41)\n\n---\n\n[Source 3 - Philosophie]\nJe suis passionné par l’interface entre la logiq",VECTOR,AGENT
+Pourquoi as-tu choisi l'informatique ?,"Excellente question ! 🎯
+
+J'ai choisi l'informatique parce que je suis vraiment passionné par tous ses aspects qui mettent en jeu la **logique, le raisonnement poussé et les défis**. Ce qui me fascine particulièrement, c'est le **déclic que les projets complexes me procurent** — le fait qu'on n'ait pas toujours à faire la même chose me motive énormément et me permet de laisser parler ma créativité.
+
+J'aime vraiment me surpasser sur des défis techniques. Il y a quelque chose de gratifiant à résoudre des problèmes compliqués et à construire des solutions qui fonctionnent. C'est cette combinaison entre la rigueur technique et la liberté créative qui m'a attiré dans ce domaine. 💻
+
+D'ailleurs, c'est pour cette raison que j'ai même poussé le concept plus loin en créant ce CV électronique avec un chatbot IA — c'était une façon de démontrer concrètement mes compétences techniques tout en offrant une expérience unique aux recruteurs ! ✨","Il est passionné d'informatique et de tous ses aspects qui mettent en jeu la logique, le raisonnement poussé et les défis en tout genre. Il est passionné par l'interface entre la logique humaine et la logique machine.","[""[Source 1 - Soft Skills]\nCe qui me passionne en informatique, c'est le déclic que les projets complexes me procurent. Le fait qu'on n'ait pas toujours à faire la même chose me motive et me permet de laisser parler ma créativité. J'aime me surpasser sur des défis techniques.\n(Pertinence: 0.81)\n\n---\n\n[Source 2 - Général]\nJe m'appelle Yann Willy Jordan Pokam Teguia et je suis étudiant finissant en Techniques de l'informatique au Cégep de Chicoutimi, spécialisation Conception et Développeme",VECTOR,AGENT
+Quelles sont tes qualités professionnelles ?,"Voici mes principales qualités professionnelles : 💼
+
+**Compétences techniques & méthodologiques :**
+- **Rigueur** dans le code et la documentation
+- **Efficacité** dans l'exécution des tâches
+- **Gestion et coordination d'équipe** - j'aime structurer et organiser les projets collectifs
+
+**Soft skills :**
+- **Approche simple et directe** des problèmes - je vais droit au but sans surcomplication
+- **Énergie communicative** - j'aime partager mes idées et créer une bonne dynamique
+- **Flexibilité** - je suis à l'aise autant en travail d'équipe qu'en autonomie
+- **Gestion du stress** - je reste efficace sous pression et face aux deadlines serrées
+- **Créativité stimulée par les défis** - j'apprécie être challengé par mes collègues, cela me pousse à innover
+
+Ces qualités m'ont permis de réaliser des projets comme **NOVA GAMES** (avec un chatbot IA ayant obtenu 100% de satisfaction) et de recevoir une **mention honorable au Hackathon UQAC 2025**. 🚀
+
+Y a-t-il une qualité en particulier que tu aimerais explorer davantage ?","Il est logique, curieux et déterminé. Il aime comprendre le fonctionnement des systèmes complexes et trouver des solutions élégantes. Son approche repose sur la rigueur, la planification et la remise en question constante.","[""[Source 1 - Soft Skills]\nMes principales qualités professionnelles sont: les compétences en gestion et coordination d'équipe, l'efficacité dans l'exécution des tâches, la rigueur dans le code et la documentation, une approche simple et directe des problèmes, et une énergie communicative.\n(Pertinence: 0.75)\n\n---\n\n[Source 2 - Résumé]\nPoints forts: Mention honorable Hackathon UQAC 2025, projet NOVA GAMES avec chatbot IA (100% satisfaction), système RAG pour portfolio, applications WPF prof",VECTOR,AGENT
+Que valorises-tu dans le travail d'équipe ?,"Dans le travail d'équipe, je valorise vraiment plusieurs choses : 🤝
+
+**La collaboration et le partage de connaissances** sont au cœur de ma philosophie. Je crois que chaque projet est une opportunité d'apprendre ensemble et de s'améliorer mutuellement.
+
+**Les défis constructifs** me motivent beaucoup. J'apprécie être challengé par les membres de mon équipe car cela stimule ma créativité et ma productivité. C'est dans ces moments d'échange qu'on progresse vraiment.
+
+Je suis aussi quelqu'un de **fiable sous pression** — je gère bien le stress et les deadlines, ce qui me permet d'être plus efficace et de soutenir mon équipe quand c'est nécessaire. 💪
+
+Enfin, j'aime apporter une **énergie communicative** et une approche directe et simple des problèmes. Je crois qu'une bonne communication et une atmosphère positive facilitent la collaboration et rendent le travail plus agréable pour tout le monde. ✨",Il valorise la collaboration et le partage de connaissances. Chaque projet est une opportunité d'apprendre et de s'améliorer.,"[""[Source 1 - Philosophie]\nPour moi, chaque projet est une opportunité d’apprendre et de m’améliorer. Je valorise la collaboration et le partage de connaissances.\n(Pertinence: 0.63)\n\n---\n\n[Source 2 - Soft Skills]\nJe suis à l'aise autant en travail d'équipe qu'en autonomie. En équipe, j'apprécie être challengé par les membres car cela stimule ma créativité et productivité. Je gère bien le stress et les deadlines, ce qui me permet d'être plus efficace sous pression.\n(Pertinence: 0.60)\n\n-",VECTOR,AGENT
+Quels sont tes objectifs de carrière ?,"Excellente question ! 🎯 Voici mes objectifs de carrière :
+
+**À court/moyen terme :**
+Je vise un poste qui combine **responsabilités techniques et leadership d'équipe**. Je souhaite continuer à acquérir des connaissances et perfectionner mes compétences en gestion, car je crois que c'est la clé pour évoluer vers des rôles plus stratégiques.
+
+**Domaines de prédilection :**
+- 🌐 **Développement web** (priorité haute) - c'est ma passion première
+- 📊 **Gestion de projets** (priorité haute) - j'aime coordonner et organiser
+- 🤖 **Intelligence artificielle** (priorité moyenne-haute) - un domaine fascinant en évolution
+- ⚙️ **DevOps** - pour l'infrastructure et l'automatisation
+
+**Formation continue :**
+Je prévois de suivre des certifications en gestion de projet, notamment **PMP et ITIL**, pour compléter mes compétences techniques par une solide base en management. Cela me permettra de mieux structurer mes approches et d'être plus efficace dans des rôles de coordination.
+
+En résumé, je cherche à évoluer vers des postes où je peux à la fois **coder et diriger**, en apportant une vision technique solide à la gestion d'équipes et de projets. 💪","Il souhaite devenir gestionnaire de projet TI et développer ses compétences en gestion d'équipes, planification et coordination de projets technologiques. Il prévoit des certifications PMP et ITIL. Il garde une vision à long terme sans s'éloigner du volet technique.","[""[Source 1 - Objectifs]\nMon objectif à 5 ans est de continuer à acquérir des connaissances et perfectionner mes compétences de gestion. Je vise un poste combinant responsabilités techniques et leadership d'équipe.\n(Pertinence: 0.59)\n\n---\n\n[Source 2 - Objectifs]\nMes domaines de prédilection sont le développement web (priorité haute), la gestion de projets (priorité haute), l'intelligence artificielle (priorité moyenne-haute) et le DevOps. Je suis particulièrement intéressé par les postes ",VECTOR,AGENT
+Combien de projets as-tu réalisés ?,"J'ai réalisé **4 projets** dans mon portfolio ! 🚀 
+
+Chacun d'entre eux représente une opportunité d'apprentissage et de mise en pratique de différentes technologies. Si tu veux en savoir plus sur l'un d'eux en particulier ou connaître les technologies utilisées, n'hésite pas à me poser la question ! 😊","Il a réalisé plusieurs projets dont une application de gestion de dépenses, une application de gestion d'épicerie et un CV interactif sous forme de chatbot IA.","[""[(4,)]""]",SQL,AGENT
+Quel diplôme as-tu obtenu ?,"Parfait ! Voici mes diplômes et formations : 📚
+
+**Actuellement en cours :**
+Je poursuis un **DEC en Techniques de l'informatique** au Cégep de Chicoutimi, avec une spécialisation en Conception et Développement d'applications. Mon programme a débuté en août 2023 et se terminera en mai 2026.
+
+**Formation antérieure :**
+J'ai obtenu mon **Baccalauréat scientifique** au Cameroun en 2021 au Complexe Scolaire International La Gaieté, avec spécialisation en mathématiques, physique et chimie. Cette formation m'a donné une solide base analytique et logique, essentielle pour la programmation. 🎓
+
+Mon DEC est particulièrement enrichissant car il me permet de maîtriser la conception orientée objet, l'architecture logicielle, les bases de données relationnelles et le développement d'applications professionnelles. 💻",Il a obtenu un DEC en Techniques de l'informatique au Cégep de Chicoutimi.,"[""Aucun résultat trouvé dans la table datas.\n\n---\n\n[Source 1 - Formation]\nJ'ai obtenu mon Baccalauréat scientifique au Cameroun en 2021 au Complexe Scolaire International La Gaieté, avec spécialisation en mathématiques, physique et chimie. Cette formation m'a donné une solide base analytique et logique essentielle en programmation.\n(Pertinence: 0.45)\n\n---\n\n[Source 2 - Formation]\nJe poursuis actuellement un DEC en Techniques de l'informatique au Cégep de Chicoutimi, avec une spécialisa",SQL,AGENT
+As-tu de l'expérience en Python ?,"Oui, j'ai de l'expérience en Python ! 🐍 Je maîtrise Python à un niveau intermédiaire et l'utilise principalement pour :
+
+- **Développement web** avec Django et FastAPI
+- **Intégration d'APIs d'IA** comme Claude et Voyage AI dans mes projets RAG
+- **Scripts d'automatisation** et simulations
+
+J'ai notamment développé des scripts pour des jeux de cartes simplifiés et des calculs de répartition de dépenses. C'est un langage que j'apprécie beaucoup pour sa flexibilité et sa puissance ! 💪
+
+Y a-t-il un projet spécifique en Python qui t'intéresse ?","Oui, il développe en Python avec Django et FastAPI.","[""Aucun résultat trouvé dans la table datas.\n\n---\n\nAucun résultat trouvé dans la table datas.\n\n---\n\n[Source 1 - Compétences techniques]\nJe maîtrise Python à un niveau intermédiaire (3/5), principalement pour le développement web avec Django et FastAPI. Je l'utilise aussi pour l'intégration d'APIs d'IA comme Claude et Voyage AI dans mes projets RAG.\n(Pertinence: 0.67)\n\n---\n\n[Source 2 - Projet]\nJ’ai aussi développé des scripts d’automatisation et de simulation en Python, notamment p",SQL,AGENT
+Tu connais React ?,"Oui, je connais React ! 🎯 
+
+J'ai utilisé **React 18** dans mon projet **Super CChic**, un système de point de vente complet pour épiceries. Dans ce projet, j'ai développé un site web vitrine en React qui complète l'application desktop WPF et l'API Django REST.
+
+C'est un projet d'envergure où j'ai pu mettre en pratique mes compétences en développement frontend moderne. Si tu veux en savoir plus sur ce projet ou sur mes autres expériences avec les technologies web, n'hésite pas à demander ! 💻","Oui, il utilise React dans ses projets, notamment pour le développement frontend.","[""Aucun résultat trouvé dans la table datas.\n\n---\n\nAucun résultat trouvé dans la table datas.\n\n---\n\nAucun résultat trouvé dans la table datas.\n\n---\n\n[(1, 'Super CChic', 'super-cchic-pos-system', 'Système de point de vente complet pour épiceries - Projet ESP final (DEC Informatique)', 'Application desktop de caisse pour épiceries développée en C# WPF avec architecture MVVM. Inclut gestion des produits, transactions avec taxes TPS/TVQ, génération de factures PDF et rapports de ventes. ",SQL,AGENT
+Quelles technologies maîtrises-tu ?,"Voici les technologies que je maîtrise 💻 :
+
+**Langages & Frameworks :**
+- **Python** (niveau intermédiaire) - principalement pour le développement web avec **Django** et **FastAPI**
+- Intégration d'APIs d'IA comme **Claude** et **Voyage AI** dans mes projets RAG
+
+**Domaines de spécialisation :**
+- 🌐 **Développement web** (priorité haute)
+- 🤖 **Intelligence artificielle** (priorité moyenne-haute)
+- ⚙️ **DevOps** 
+- 📊 **Gestion de projets** (priorité haute)
+
+Je suis particulièrement intéressé par les postes qui combinent l'aspect technique avec la coordination et la gestion. Si tu veux en savoir plus sur mes projets spécifiques ou sur une technologie en particulier, n'hésite pas à demander ! 😊","Il maîtrise C#, .NET, WPF, MVVM, ASP.NET Core, Python, Django, FastAPI, et développe des chatbots basés sur l'IA.","[""Aucun résultat trouvé dans la table datas.\n\n---\n\n[Source 1 - Expérience]\nEn parallèle de mes études, je travaille pour Globatech, un sous-traitant spécialisé en entretien ménager en milieu industriel chez Rio Tinto. Cette expérience m'a permis de développer des compétences essentielles: gestion du personnel, organisation du travail, rigueur et gestion du temps. Ces soft skills se transposent directement dans la gestion de projets informatiques.\n(Pertinence: 0.49)\n\n---\n\n[Source 2 - Co",SQL,AGENT
+As-tu de l'expérience en C# ?,"Non, je n'ai pas d'expérience en C# dans mon profil actuel. 💻 
+
+Mes compétences se concentrent plutôt sur d'autres langages et technologies. Si tu veux connaître les langages et frameworks avec lesquels je travaille, je serais ravi de te les présenter ! 😊","Oui, il maîtrise le développement en C#, .NET et WPF avec le modèle MVVM pour concevoir des interfaces structurées et maintenables.","[""Aucun résultat trouvé dans la table datas.""]",SQL,AGENT
+Tu as un portfolio ?,"Oui, absolument ! 🎯 J'ai un portfolio interactif en ligne accessible à **https://portfolio.jordan-pokam.dev** où tu peux découvrir mon travail en détail.
+
+Mon portfolio contient **4 projets** qui mettent en avant mes réalisations en développement logiciel. Tu y trouveras :
+- Mes projets techniques avec les technologies utilisées
+- Mon parcours académique et professionnel
+- Mes compétences et réalisations
+
+Parmi mes projets récents, j'ai notamment travaillé sur **NOVA GAMES** avec un chatbot IA (qui a reçu 100% de satisfaction), et j'ai aussi développé un **système RAG pour mon portfolio** (celui-ci, en fait ! 😊).
+
+Tu veux que je te parle d'un projet en particulier, ou tu préfères explorer le portfolio directement ? 💻","Oui, il a élaboré non seulement un portfolio déployé mais aussi CV interactif sous forme de chatbot alimenté par un modèle d'IA, conçu pour simuler un entretien en ligne et permettre à un employeur de découvrir ses compétences plus aisément.","[""[(4,)]\n\n---\n\n[Source 1 - PORTFOLIO]\nJordan dispose d'un portfolio interactif en ligne accessible à l'adresse https://portfolio.jordan-pokam.dev. Ce site présente ses projets, ses compétences techniques, son parcours académique et professionnel, ainsi que ses réalisations en développement logiciel. Pour une vue d'ensemble visuelle et détaillée de son travail, le portfolio est la meilleure ressource à consulter.\n(Pertinence: 0.59)\n\n---\n\n[Source 2 - Résumé]\nPoints forts: Mention honora",SQL,AGENT
+Décris ton projet le plus avancé en IA,"Excellent question! 🤖 Mon projet le plus avancé en IA est sans doute **NOVA GAMES S2J**, une plateforme e-commerce complète pour jeux vidéo que j'ai développée d'août à décembre 2025.
+
+## Ce qui rend ce projet particulièrement avancé :
+
+**Architecture IA intégrée :**
+- Un **chatbot d'assistance intelligent** utilisant l'API Claude pour répondre aux questions des clients en temps réel
+- Intégration de **pgvector** pour la recherche vectorielle sémantique
+- Utilisation de **Voyage AI** pour les embeddings de haute qualité
+
+**Stack technologique robuste :**
+- Backend multi-services avec **Django** et **FastAPI**
+- Base de données **PostgreSQL** avec support vectoriel
+- Orchestration complète avec **Docker**
+- Authentification sécurisée via **Google OAuth**
+
+**Fonctionnalités avancées :**
+- Catalogue de jeux avec filtres intelligents
+- Système de panier et commandes
+- Dashboard administrateur complet
+- Gestion des employés et rôles
+
+Au-delà de ce projet, j'ai aussi développé un **CV Chatbot RAG** (celui-ci! 😄) qui utilise une architecture RAG complète avec recherche vectorielle et génération de réponses via Claude, déployé en production sur AWS EC2.
+
+Ces deux projets me permettent de maîtriser les concepts modernes de l'IA : RAG, embeddings vectoriels, LLMs et intégration d'APIs externes. ✨
+
+Veux-tu en savoir plus sur une technologie spécifique ou sur un autre projet?","Son projet le plus avancé en IA est son chatbot CV intelligent, un système RAG complet utilisant FastAPI, PostgreSQL avec pgvector, Voyage AI pour les embeddings et Claude comme LLM. Il est déployé en production.","[""[(1, 'Super CChic', 'super-cchic-pos-system', 'Système de point de vente complet pour épiceries - Projet ESP final (DEC Informatique)', 'Application desktop de caisse pour épiceries développée en C# WPF avec architecture MVVM. Inclut gestion des produits, transactions avec taxes TPS/TVQ, génération de factures PDF et rapports de ventes. Complété par une API REST Django déployée sur Azure App Service et un site web vitrine en React.', 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w",VECTOR_SQL,AGENT
+Parle-moi de tes projets en C#,"Excellent question! 🚀 J'ai deux projets majeurs en C# dont je suis particulièrement fier:
+
+## 1. **Super CChic** - Système de Point de Vente 💳
+C'est mon projet ESP (Épreuve Synthèse de Programme) - un système de caisse complet pour épiceries. C'est un projet **full stack** vraiment ambitieux:
+
+**Côté Desktop (C# .NET 8 + WPF):**
+- Application de point de vente avec architecture MVVM
+- Gestion complète de l'inventaire en temps réel
+- Système de transactions avec calcul automatique des taxes (TPS/TVQ)
+- Génération de factures PDF
+- Dashboard analytics avec rapports détaillés
+
+**Complété par:**
+- Une API REST Django déployée sur Azure App Service
+- Un site web vitrine en React 18
+- Base de données PostgreSQL
+
+C'est vraiment un projet qui démontre ma capacité à gérer une architecture complète et complexe!
+
+## 2. **Gestionnaire de Projet WebNet** 📊
+Une application professionnelle de gestion de projets développée de septembre à décembre 2025:
+
+- Architecture MVVM propre et testable
+- Entity Framework Core pour la persistance des données
+- Interface moderne avec Material Design et dark mode
+- Gestion complète des projets, tâches, tags et catégories
+- Timeline, calendrier intégré, et rapports
+- Export PDF et Excel
+- Tests unitaires complets
+
+Ces deux projets montrent ma maîtrise de **C# .NET 8, WPF, MVVM, Entity Framework Core** et ma capacité à créer des applications desktop robustes et maintenables! 💪","Il a conçu une application de gestion de projets avec des amis en C# avec WPF/MVVM, ainsi qu'une application WPF de gestion d'épicerie complète et prête à être utilisée en situation réelle.","[""[(4, 'Gestionnaire de Projet WebNet', 'gestionnaire-projet-webnet', 'Application de gestion de projets avec pattern MVVM et Material Design', 'Application professionnelle de gestion de projets utilisant le pattern MVVM, Entity Framework Core et Material Design. Interface moderne avec dark mode et animations fluides.', 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=800&h=600&fit=crop', '[\""C# .NET 8\"", \""WPF\"", \""MVVM\"", \""Entity Framework Core\"", \""Material Design\"", \""SQL Ser",VECTOR_SQL,AGENT
+Quel est ton meilleur projet et pourquoi ?,"C'est une excellente question ! 🎯 Je dirais que mon **meilleur projet est ""Super CChic""** — mon projet ESP (Épreuve Synthèse de Programme) de fin de DEC en informatique.
+
+Voici pourquoi je suis particulièrement fier de ce projet :
+
+**🏗️ Ampleur et complexité**
+C'est un système de point de vente complet pour épiceries avec une véritable architecture **Full Stack** :
+- Application desktop WPF en C# avec architecture MVVM
+- API REST Django déployée sur Azure App Service
+- Site web vitrine en React
+- Gestion complète de l'inventaire, transactions avec calcul automatique TPS/TVQ, génération de factures PDF
+
+**💡 Ce qu'il démontre**
+Ce projet synthétise vraiment tout ce que j'ai appris : architecture logicielle solide, gestion de bases de données, déploiement cloud, et surtout la capacité à créer un produit **utilisable et maintenable**. C'est pas juste du code qui fonctionne, c'est du code qu'on peut confier à quelqu'un d'autre.
+
+**🎓 Valeur pédagogique**
+C'était l'aboutissement de mon programme — le projet qui validait ma compétence à développer des solutions professionnelles du début à la fin.
+
+Après, je dois mentionner que mon **CV Chatbot RAG** (celui-ci ! 😄) me tient aussi très à cœur car il démontre mon expertise en IA et architecture moderne, avec des optimisations impressionnantes (réduction de 60x des coûts API).
+
+Quel aspect t'intéresse le plus ? 🚀","Son meilleur projet est le chatbot CV intelligent, un système RAG avec FastAPI, PostgreSQL, pgvector, Voyage AI et Claude. Il l'a conçu pour démontrer ses compétences techniques et donner la possibilité à un employeur d'avoir un aperçu du type d'employé qu'il peut être.","[""[(1, 'Super CChic', 'super-cchic-pos-system', 'Système de point de vente complet pour épiceries - Projet ESP final (DEC Informatique)', 'Application desktop de caisse pour épiceries développée en C# WPF avec architecture MVVM. Inclut gestion des produits, transactions avec taxes TPS/TVQ, génération de factures PDF et rapports de ventes. Complété par une API REST Django déployée sur Azure App Service et un site web vitrine en React.', \""Projet ESP (Épreuve Synthèse de Programme) — Développement",VECTOR_SQL,AGENT
+Explique ton expérience en développement web,"Voici mon expérience en développement web 🚀
+
+**Formation académique**
+J'ai suivi une formation solide au Cégep de Chicoutimi avec des cours clés en développement web, développement d'applications, déploiement d'applications et services de données. Ces cours m'ont permis de maîtriser le **développement full-stack** et les pratiques modernes comme le déploiement containerisé.
+
+**Expertise technique**
+Je suis un développeur **full-stack** de 21 ans, avec une expertise particulière en :
+- **C# et WPF** pour le développement d'applications desktop
+- **Django** pour le backend web
+- Intégration d'**intelligence artificielle** dans les applications (RAG, Claude, LangChain)
+
+**Mes intérêts**
+Le développement web est ma **priorité haute** 💻. Je suis particulièrement intéressé par les projets qui combinent :
+- La création d'applications web modernes
+- L'intégration de solutions IA
+- Les aspects DevOps et déploiement
+
+Mon parcours du Cameroun au Québec m'a apporté une grande **adaptabilité** et une ouverture d'esprit qui me permettent de m'attaquer à des défis techniques variés et de collaborer efficacement dans des environnements multiculturels.
+
+Aimerais-tu en savoir plus sur un projet spécifique ou une technologie en particulier? 😊","Il conçoit des applications web avec ASP.NET Core, et React avec des interfaces assez intuitives et immersives. Il développe aussi avec Django et FastAPI côté backend Python.","[""Aucun résultat trouvé dans la table datas.\n\n---\n\n[Source 1 - Formation]\nAu Cégep de Chicoutimi, j'ai suivi des cours significatifs: Programmation web, Développement d'applications, Déploiement d'applications, et Services de données. Ces cours m'ont permis de maîtriser le développement full-stack et le déploiement containerisé.\n(Pertinence: 0.58)\n\n---\n\n[Source 2 - Objectifs]\nMes domaines de prédilection sont le développement web (priorité haute), la gestion de projets (priorité haute",VECTOR_SQL,AGENT
+Donne-moi une recette de gâteau au chocolat,"Haha, je comprends l'envie ! 🍰 Mais je dois te dire que ma spécialité, c'est plutôt le **code** que la **cuisine** ! 
+
+Je suis un développeur logiciel, donc mes recettes sont plutôt du côté des algorithmes et des architectures logicielles. 😄
+
+Si tu veux en savoir plus sur **mes projets**, **mes compétences en développement**, ou **mon parcours professionnel**, je serais ravi de t'en parler ! Sinon, pour les recettes de gâteau, je te recommande de consulter un site culinaire spécialisé. 👨‍💻
+
+Y a-t-il quelque chose sur mon profil professionnel que tu aimerais découvrir ?",Cette question est hors du contexte professionnel du chatbot CV. Le chatbot devrait rediriger poliment vers le profil professionnel.,[],OFF_TOPIC,AGENT
+Quelle est ta couleur préférée ?,"Haha, bonne question ! 😄 
+
+Honnêtement, ce n'est pas vraiment quelque chose que j'ai documenté dans mon profil professionnel. Ma couleur préférée n'est pas vraiment pertinente pour mon travail de développeur ! 
+
+Ce que je peux te dire, c'est que je suis passionné par la **technologie, le développement logiciel et la création de solutions innovantes**. Si tu veux en savoir plus sur mes compétences, mes projets ou ma vision professionnelle, je serais ravi de t'en parler ! 💻✨
+
+Y a-t-il quelque chose de spécifique sur mon parcours ou mes projets que tu aimerais connaître ?",Le chatbot ne répond pas aux questions personnelles non liées au profil professionnel. Il préfère garder ses réponses centrées sur le parcours professionnel et les compétences.,[],OFF_TOPIC,AGENT
+Que penses-tu du président ?,"Haha, bonne question ! 😄 Mais je dois te dire que la politique, ce n'est vraiment pas mon domaine d'expertise. Je suis développeur logiciel, pas analyste politique !
+
+Ce que je peux te partager, c'est plutôt :
+- **Mes projets** et les technologies que j'utilise
+- **Mon expérience** en développement
+- **Mes compétences** et ma formation
+- **Ma philosophie** de travail et mes motivations
+
+Si tu veux en savoir plus sur mon profil professionnel ou discuter de développement logiciel, je serais ravi de t'aider ! 💻 Qu'est-ce qui t'intéresse ?","Le chatbot ne prend pas position sur des sujets politiques, religieux ou personnels. Son objectif est de représenter le profil professionnel.",[],OFF_TOPIC,AGENT
+Comment gères-tu les défis techniques ?,"Excellente question ! 🎯 Voici comment j'aborde les défis techniques :
+
+**Ma philosophie générale :**
+Je crois qu'un bon développeur ne se limite pas à écrire du code : il comprend le besoin, structure la solution et anticipe les erreurs possibles. C'est cette approche holistique qui me guide.
+
+**Concrètement, je procède ainsi :**
+
+1. **Rigueur et planification** - Je ne me lance pas tête baissée. Je prends le temps de bien comprendre le problème, de le décomposer en sous-problèmes et de planifier ma solution avant de coder.
+
+2. **Remise en question constante** - Mon approche du travail repose sur la rigueur, la planification et la remise en question constante de mes méthodes pour les améliorer. Si quelque chose ne fonctionne pas, je cherche à comprendre pourquoi et comment faire mieux.
+
+3. **Qualité et maintenabilité** - Je privilégie la qualité du code, la clarté de la structure et la maintenabilité avant tout. Un bon projet est un projet que quelqu'un d'autre peut reprendre facilement.
+
+4. **Apprentissage continu** - Chaque projet est une opportunité d'apprendre et de m'améliorer. Je valorise la collaboration et le partage de connaissances, ce qui m'aide à grandir techniquement.
+
+En résumé : **compréhension → planification → exécution rigoureuse → amélioration continue** 💪
+
+Y a-t-il un type de défi technique spécifique sur lequel tu aimerais en savoir plus ?","Il croit qu'un bon développeur ne se limite pas à écrire du code : il comprend surtout le besoin, structure la solution et anticipe les erreurs possibles. Il aime comprendre le fonctionnement des systèmes complexes et trouver des solutions élégantes.","[""[Source 1 - Philosophie]\nMon approche du travail repose sur la rigueur, la planification et la remise en question constante de mes méthodes pour les améliorer.\n(Pertinence: 0.51)\n\n---\n\n[Source 2 - Philosophie]\nJe crois qu’un bon développeur ne se limite pas à écrire du code : il comprend le besoin, structure la solution et anticipe les erreurs possibles.\n(Pertinence: 0.43)\n\n---\n\n[Source 3 - Profil]\nJe privilégie la qualité du code, la clarté de la structure et la maintenabilité av",VECTOR,AGENT
+Tu fais de la documentation ?,"Oui, absolument ! 📚 Je considère la documentation technique comme une partie essentielle du développement logiciel. J'ai développé un intérêt particulier pour la **documentation technique claire et structurée**, car je crois que chaque projet doit être transmissible et durable.
+
+Je suis à l'aise avec des outils comme **HelpNDoc** pour créer de la documentation professionnelle. De plus, lors de mon projet de synthèse (Super CChic), j'ai dû produire une **documentation complète** comme partie intégrante de l'examen final de mon DEC en Techniques de l'informatique.
+
+Pour moi, une bonne documentation c'est :
+- ✨ Claire et bien structurée
+- 🎯 Facile à maintenir et à mettre à jour
+- 📖 Accessible pour les futurs développeurs
+
+C'est un aspect que je ne néglige jamais dans mes projets ! As-tu besoin d'aide pour documenter quelque chose ?","Oui, il a développé un intérêt pour la documentation technique claire et structurée, afin de rendre chaque projet transmissible et durable. Il est à l'aise avec les outils comme la suite Microsoft office.","[""Aucun résultat trouvé dans la table datas.\n\n---\n\n[Source 1 - Compétences techniques]\nJ’ai développé un intérêt particulier pour la documentation technique claire et structurée, afin de rendre chaque projet transmissible et durable.\n(Pertinence: 0.71)\n\n---\n\n[Source 2 - Projet]\nSuper CChic est l'Épreuve Synthèse de Programme (ESP), l'examen final de mon DEC en Techniques de l'informatique. Ce projet doit démontrer la maîtrise de l'ensemble des compétences du programme : conception ori",VECTOR,AGENT
+Combien d'heures par semaine consacres-tu à ta formation ?,"Je suis désolé, je n'ai pas trouvé d'information spécifique sur le nombre d'heures par semaine que je consacre à ma formation dans mes données actuelles. 😊
+
+Cependant, je peux te dire que **l'apprentissage continu est une priorité pour moi** en tant que développeur. Je m'engage régulièrement dans :
+- L'exploration de nouvelles technologies et frameworks
+- La participation à des projets qui me permettent d'apprendre
+- La lecture de documentation et de ressources techniques
+
+Si tu as d'autres questions sur mes formations, mes compétences ou mes projets, je serais ravi de t'en parler ! 💻","Il consacre actuellement une dizaine d'heures par semaine à sa montée en compétences, notamment en suivant des formations en ligne dans le domaine des TI et même de la gestion de projets.","[""Aucun résultat trouvé dans la table datas.\n\n---\n\nErreur lors de la recherche: You have not yet added your payment method in the billing page and will have reduced rate limits of 3 RPM and 10K TPM. To unlock our standard rate limits, please add a payment method in the billing page for the appropriate organization in the user dashboard (https://dashboard.voyageai.com/). Even with payment methods entered, the free tokens (200M tokens for Voyage series 3) will still apply. After adding a payme",SQL,AGENT
+Tu préfères Windows ou Linux pour développer ?,"Bonne question ! 🤔 Honnêtement, je n'ai pas de préférence absolue entre Windows et Linux - je suis plutôt pragmatique et j'adapte mon choix selon le contexte du projet.
+
+Cela dit, je dois avouer que j'ai une affinité particulière pour **Windows** dans certains domaines. Par exemple, je suis très à l'aise avec **WPF (Windows Presentation Foundation)** pour créer des applications desktop professionnelles - c'est un framework que j'adore vraiment ! 💻
+
+Mais pour le développement web et les projets modernes, **Linux** (ou macOS) offrent souvent une meilleure expérience avec les outils de développement contemporains. C'est vraiment une question de ""le bon outil pour le bon travail"".
+
+L'important pour moi, c'est d'avoir un environnement stable et productif, peu importe le système d'exploitation. Je privilégie les solutions élégantes et performantes, et ça s'applique aussi à mon choix d'environnement de développement ! ✨
+
+Tu as une préférence toi-même ?",Le chatbot peut répondre à cette question car elle est liée aux préférences techniques. Il devrait partager son avis sur ses outils et environnements de développement préférés.,"[""[Source 1 - Compétences techniques]\nWPF (Windows Presentation Foundation) est l'un de mes frameworks préférés avec un niveau avancé (4.5/5). Je crée des applications desktop professionnelles avec MVVM, Material Design et CommunityToolkit.Mvvm.\n(Pertinence: 0.40)\n\n---\n\n[Source 2 - Objectifs]\nMes domaines de prédilection sont le développement web (priorité haute), la gestion de projets (priorité haute), l'intelligence artificielle (priorité moyenne-haute) et le DevOps. Je suis particulièr",VECTOR,AGENT
+Es-tu travailleur ?,"Oui, absolument ! 💼 Je suis quelqu'un qui prend son travail au sérieux et qui s'engage pleinement dans chaque projet.
+
+Voici ce qui me caractérise professionnellement :
+
+**Mon éthique de travail :**
+- Je suis à l'aise autant en travail d'équipe qu'en autonomie
+- Je gère bien le stress et les deadlines, ce qui me rend plus efficace sous pression
+- Je valorise la rigueur, la planification et l'amélioration continue de mes méthodes
+
+**Ma philosophie :**
+- Chaque projet est pour moi une opportunité d'apprendre et de m'améliorer 🚀
+- J'apprécie être challengé par les membres de mon équipe car cela stimule ma créativité et ma productivité
+- Je crois fermement à la collaboration et au partage de connaissances
+
+En résumé, je suis quelqu'un de motivé, rigoureux et engagé dans la qualité de mon travail. Je ne vois pas le travail comme une corvée, mais comme une chance de grandir et de contribuer à quelque chose de significatif ! 😊","Oui, son approche du travail repose sur la rigueur, la planification et la remise en question constante de ses méthodes pour les améliorer. Il consacre une beaucoup de temps à sa montée en compétences.","[""[Source 1 - Soft Skills]\nJe suis à l'aise autant en travail d'équipe qu'en autonomie. En équipe, j'apprécie être challengé par les membres car cela stimule ma créativité et productivité. Je gère bien le stress et les deadlines, ce qui me permet d'être plus efficace sous pression.\n(Pertinence: 0.46)\n\n---\n\n[Source 2 - Philosophie]\nPour moi, chaque projet est une opportunité d’apprendre et de m’améliorer. Je valorise la collaboration et le partage de connaissances.\n(Pertinence: 0.45)\n\n-",VECTOR,AGENT

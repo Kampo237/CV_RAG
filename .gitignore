@@ -416,3 +416,6 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+# Données personnelles du portfolio (téléphone, infos privées) — jamais dans le dépôt public
+donnees_portfolio_bd.md

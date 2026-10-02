@@ -1,0 +1,47 @@
+services:
+  # ========================================================================
+  # FASTAPI RAG API
+  # ========================================================================
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: kpo237/cv-chatbot-api:latest
+    container_name: cv-chatbot-api
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "8001:8001"
+    depends_on:
+      - mcp-sms
+    networks:
+      - chatbot-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ========================================================================
+  # MCP SMS SERVER (Twilio)
+  # ========================================================================
+  mcp-sms:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: kpo237/cv-chatbot-mcp-sms:latest
+    container_name: cv-chatbot-mcp-sms
+    restart: unless-stopped
+    env_file:
+      - .env
+    command: python -m mcp_servers.sms_server.server
+    # Pas de port publié sur l'hôte : seul le service "api" doit atteindre
+    # mcp-sms, via le réseau Docker interne (http://mcp-sms:8010/sse).
+    # Publier ce port exposerait un outil d'envoi de SMS non authentifié.
+    networks:
+      - chatbot-net
+
+networks:
+  chatbot-net:
+    driver: bridge
