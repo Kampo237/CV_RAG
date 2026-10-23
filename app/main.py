@@ -131,14 +131,17 @@ from app.Rag.generation import (
     extract_clarification_question,
 )
 from app.Rag.sql_chain import get_sql_chain_raw
-from app.Rag.guide import GuideStreamFilter, guide_suffix
+from app.Rag.guide import GuideStreamFilter, guide_suffix, build_guide_line, THEME_MODES
 from app.Rag import canonical
+from app.Rag import contact as contact_service
 from app.Rag.fast_path import (
     route_question,
     prepare_fast_answer,
     get_fast_llm,
     detect_alert,
     wants_sms,
+    closing_reply,
+    last_answer_asked,
 )
 
 from dotenv import load_dotenv
@@ -243,6 +246,8 @@ class QuestionRequest(BaseModel):
     question: str
     session_id: Optional[str] = None
     category: Optional[str] = None
+    # Contexte envoyé par le front : {"theme": "light"|"dark", "path": "/projects"}
+    context: Optional[dict] = None
 
 
 class ChatResponse(BaseModel):
@@ -637,6 +642,22 @@ def consume_daily_budget() -> tuple[bool, bool]:
 # HELPERS DE STREAMING
 # =============================================================================
 
+_SITE_PATH = re.compile(r"^/[\w\-/]{0,80}$")
+
+
+def _site_context(raw: Optional[dict]) -> dict:
+    """Contexte du front, filtré : thème connu et chemin de page plausible seulement."""
+    if not isinstance(raw, dict):
+        return {}
+    site = {}
+    if raw.get("theme") in THEME_MODES:
+        site["theme"] = raw["theme"]
+    path = raw.get("path")
+    if isinstance(path, str) and _SITE_PATH.match(path):
+        site["path"] = path
+    return site
+
+
 def _log_first_token(request_id: str, timer: PipelineTimer) -> None:
     """Latence perçue par le visiteur : objectif < 1 s."""
     logger.info(f"[{request_id}] ⚡ premier token à {timer.total_time():.0f}ms")
@@ -753,8 +774,6 @@ async def chat(request: QuestionRequest, http_request: Request):
 
             # =====================================================================
             # 2A. ALERTES AUTONOMES (regex, zéro LLM)
-            #     Remplace le send_sms proactif de l'agent : l'agent n'ouvre
-            #     plus le MCP SMS que sur demande explicite du visiteur.
             # =====================================================================
             alert = detect_alert(request.question)
             if alert and _should_alert(f"{alert}:{session_id}"):
@@ -763,83 +782,121 @@ async def chat(request: QuestionRequest, http_request: Request):
                     level="WARN" if alert == "ALERTE" else "INFO",
                 )
 
-            sms_requested = wants_sms(request.question, history)
+            site = _site_context(request.context)
+            pending_contact = contact_service.has_pending_draft(session_id)
 
             # =====================================================================
-            # 2B. CHEMIN RAPIDE (projets, fiche projet, CV, pages du site)
+            # 2B. FIN DE CONVERSATION — réponse fixe, sans question ni appel au
+            #     modèle (« merci », « c'est bon pour aujourd'hui »…). Pas pendant
+            #     un message à Jordan en attente : là, « c'est bon » peut valoir
+            #     confirmation, c'est l'agent qui tranche.
+            # =====================================================================
+            goodbye = None if pending_contact else closing_reply(request.question, history)
+            if goodbye:
+                yield goodbye
+                record_interaction(session_id, request.question, goodbye)
+                timer.start_step("2B_FIN")
+                timer.end_step("au revoir (sans LLM)")
+                return
+
+            sms_requested = pending_contact or wants_sms(request.question, history)
+
+            async def stream_fast(fast):
+                """Diffuse une réponse du chemin rapide (texte, puis ligne [[guide]])."""
+                timer.start_step("6_GENERATION_RAPIDE")
+                visible = ""
+                try:
+                    async for token in fast.stream:
+                        if not visible:
+                            _log_first_token(request_id, timer)
+                        visible += token
+                        yield token
+                except Exception as e:
+                    logger.error(f"[{request_id}] ❌ Erreur chemin rapide: {e}")
+                    if visible:
+                        yield "\n\nDésolé, un problème technique est survenu. Réessaie dans un instant."
+                    else:
+                        yield ("⚠️ Désolé, je rencontre un souci technique côté assistant. "
+                               "Réessaie dans un instant — ou contacte-moi directement sur LinkedIn :)")
+                    await send_alert_sms(
+                        f"FAST PATH KO sess={session_id[:8]} q='{request.question[:60]}' :: {_summarize_error(e)}",
+                        level="ERROR",
+                    )
+                    timer.end_step("ERREUR")
+                    return
+                suffix = guide_suffix(visible, fast.guide_line)
+                if suffix:
+                    yield suffix
+                record_interaction(session_id, request.question, visible)
+                timer.end_step(fast.label)
+
+            # =====================================================================
+            # 2C. CHEMIN RAPIDE (projets, fiche projet, CV, pages du site, thème)
             #     Routeur regex → SQL figé en cache → un seul appel Haiku en
-            #     streaming (ou un texte fixe). Pas de reformulation, pas
-            #     d'agent. Si ça ne matche pas ou si les données manquent, on
-            #     continue sur le pipeline normal.
+            #     streaming (ou un texte fixe). Jamais pendant un message à Jordan.
             # =====================================================================
             if sms_requested:
-                route = None  # protocole SMS en cours → agent + MCP
+                route = None
             if route:
-                timer.start_step("2B_FAST_PATH")
-                fast = await prepare_fast_answer(route, request.question, history)
+                timer.start_step("2C_FAST_PATH")
+                fast = await prepare_fast_answer(route, request.question, history, site)
                 timer.end_step(f"{route.kind} → {'rapide' if fast else 'pipeline normal'}")
-
                 if fast:
-                    timer.start_step("6_GENERATION_RAPIDE")
-                    visible = ""
-                    try:
-                        async for token in fast.stream:
-                            if not visible:
-                                _log_first_token(request_id, timer)
-                            visible += token
-                            yield token
-                    except Exception as e:
-                        logger.error(f"[{request_id}] ❌ Erreur chemin rapide: {e}")
-                        if visible:
-                            yield "\n\nDésolé, un problème technique est survenu. Réessaie dans un instant."
-                        else:
-                            yield ("⚠️ Désolé, je rencontre un souci technique côté assistant. "
-                                   "Réessaie dans un instant — ou contacte-moi directement sur LinkedIn :)")
-                        await send_alert_sms(
-                            f"FAST PATH KO sess={session_id[:8]} q='{request.question[:60]}' :: {_summarize_error(e)}",
-                            level="ERROR",
-                        )
-                        timer.end_step("ERREUR")
-                        return
-
-                    suffix = guide_suffix(visible, fast.guide_line)
-                    if suffix:
-                        yield suffix
-                    record_interaction(session_id, request.question, visible)
-                    timer.end_step(fast.label)
+                    async for chunk in stream_fast(fast):
+                        yield chunk
                     return
 
             # =====================================================================
-            # 2C. REFORMULATION (faite une seule fois ici, en amont du pipeline)
-            #
-            # Si le message est trop vague pour être reformulé en question
-            # autonome (ex: "euhh", "vasy voir..."), on ne lance PAS le
-            # pipeline RAG dessus : ça reviendrait à demander à l'agent de
-            # "répondre" à une question de clarification au lieu de la
-            # reposer au visiteur. On répond directement avec la clarification
-            # et on s'arrête là pour ce tour — le prochain message du visiteur
-            # profitera de cet échange dans l'historique pour mieux répondre.
+            # 2D. REFORMULATION
+            #   - sautée pendant un message à Jordan : l'agent a l'historique, et
+            #     une question de clarification court-circuitait tout le protocole
+            #     (« oui » → « Tu confirmes que… ? » au lieu de l'envoi) ;
+            #   - clarification ignorée quand le visiteur répond à une question
+            #     posée juste avant : l'agent tranche avec l'historique.
             # =====================================================================
-            timer.start_step("2C_REFORMULATION")
-            rephrased_question = await rephrase_question_async(request.question, history)
+            if sms_requested:
+                rephrased_question = request.question
+            else:
+                timer.start_step("2D_REFORMULATION")
+                rephrased_question = await rephrase_question_async(request.question, history)
+                if is_clarification_request(rephrased_question):
+                    if last_answer_asked(history):
+                        rephrased_question = request.question
+                        timer.end_step("clarification ignorée (réponse à une question)")
+                    else:
+                        clarification = extract_clarification_question(rephrased_question)
+                        timer.end_step("CLARIFICATION_DEMANDEE")
+                        yield clarification
+                        record_interaction(session_id, request.question, clarification)
+                        return
+                else:
+                    timer.end_step(f"'{rephrased_question[:60]}'")
 
-            if is_clarification_request(rephrased_question):
-                clarification = extract_clarification_question(rephrased_question)
-                timer.end_step("CLARIFICATION_DEMANDEE")
-                yield clarification
-                record_interaction(session_id, request.question, clarification)
-                return
-            timer.end_step(f"'{rephrased_question[:60]}'")
+                # Seconde chance pour le chemin rapide : « oui » reformulé en
+                # « Bascule le site en mode sombre » prend la route thème (fiable)
+                # au lieu de dépendre de l'agent.
+                if wants_sms(rephrased_question, []):
+                    sms_requested = True
+                elif rephrased_question.strip() != request.question.strip():
+                    route = await route_question(rephrased_question)
+                    if route:
+                        fast = await prepare_fast_answer(route, rephrased_question, history, site)
+                        if fast:
+                            async for chunk in stream_fast(fast):
+                                yield chunk
+                            return
 
             # =====================================================================
             # 3-6. PIPELINE + GÉNÉRATION EN STREAMING
-            #   agent    : ReAct, tokens diffusés dès qu'ils sortent du LLM
+            #   agent    : ReAct, tokens diffusés dès qu'ils sortent du LLM ; les
+            #              outils d'action remplissent agent_actions, dont le code
+            #              tire la ligne [[guide]]
             #   automate : graphe LangGraph puis generate_response (astream)
-            # La ligne [[guide]] éventuelle est interceptée, validée, puis
-            # ré-émise en toute fin de réponse (jamais affichée au visiteur).
             # =====================================================================
             timer.start_step("3_6_PIPELINE")
-            guide_filter = GuideStreamFilter(await canonical.get_active_slugs())
+            slugs = await canonical.get_active_slugs()
+            guide_filter = GuideStreamFilter(slugs)
+            agent_actions: list = []
             visible = ""
             pipeline_error_detail = ""  # vrai détail technique → SMS de diagnostic
 
@@ -849,7 +906,8 @@ async def chat(request: QuestionRequest, http_request: Request):
                     session_id=session_id,
                     history=history,
                     rephrased_question=rephrased_question,
-                    enable_sms=sms_requested,
+                    site=site,
+                    actions=agent_actions,
                 )
             else:
                 token_source = _automate_tokens(request.question, session_id, history, rephrased_question)
@@ -871,6 +929,9 @@ async def chat(request: QuestionRequest, http_request: Request):
             if rest:
                 visible += rest
                 yield rest
+            if agent_actions:
+                # Actions faites par les outils : c'est le code qui écrit la ligne
+                guide_line = build_guide_line(agent_actions, slugs)
 
             # Pipeline en échec (ex. modèle indisponible) → message embelli pour
             # le visiteur, MAIS SMS avec le vrai détail technique pour Jordan.
@@ -889,8 +950,8 @@ async def chat(request: QuestionRequest, http_request: Request):
                 return
 
             if not visible.strip():
-                # Le modèle n'a écrit qu'une ligne [[guide]] (ou rien) : jamais de
-                # réponse vide, et pas de « rien trouvé » quand le site navigue.
+                # Le modèle n'a écrit qu'une action (ou rien) : jamais de réponse
+                # vide, et pas de « rien trouvé » quand le site navigue.
                 visible = "Voilà 👇" if guide_line else "Je n'ai pas cette information."
                 yield visible
 

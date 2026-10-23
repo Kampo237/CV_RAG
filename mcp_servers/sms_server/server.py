@@ -47,7 +47,10 @@ TWILIO_FROM_NUMBER = os.getenv("TWILIO_FROM_NUMBER")
 # Destinataire unique des alertes — fixé côté serveur, jamais choisi par l'appelant
 # (LLM ou client MCP). Une injection de prompt sur l'agent ne peut donc pas
 # détourner ce tool pour spammer un tiers.
-ALERT_PHONE_NUMBER = os.getenv("ALERT_PHONE_NUMBER")
+#
+# JORDAN_PHONE en repli : c'est la variable que définit le .env de l'API.
+# Sans ce repli, ALERT_PHONE_NUMBER absent faisait échouer CHAQUE envoi.
+ALERT_PHONE_NUMBER = os.getenv("ALERT_PHONE_NUMBER") or os.getenv("JORDAN_PHONE")
 
 
 def _get_twilio_client():

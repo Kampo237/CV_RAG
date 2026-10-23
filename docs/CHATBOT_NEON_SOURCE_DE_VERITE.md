@@ -16,14 +16,21 @@ Documents de référence (exigences) :
 1.  Rate limiting + anti-abus (IP, longueur, budget quotidien)         — sans LLM
 2.  Historique  ∥  routeur du chemin rapide (en parallèle)             — sans LLM
 2a. Alertes SMS autonomes (LEAD / PROJET / ALERTE, par regex)          — sans LLM
-2b. Chemin rapide ─── match ───▶ 1 appel Haiku en streaming (ou texte fixe) ─▶ fin
-        │ pas de match / table canonique vide
+2b. Fin de conversation (« merci », « c'est bon ») → au revoir fixe   — sans LLM, sans question
+2c. Chemin rapide ─── match ───▶ 1 appel Haiku en streaming (ou texte fixe) ─▶ fin
+        │ pas de match / message à Jordan en cours
         ▼
-2c. Reformulation (LLM seulement si la question dépend de l'historique)
+2d. Reformulation (LLM seulement si la question dépend de l'historique ; sautée pendant
+    un message à Jordan ; clarification ignorée si le visiteur répond à une question)
+    puis seconde chance du chemin rapide sur la question reformulée
 3.  Agent ReAct (RAG_MODE=agent) ou graphe LangGraph (automate), en streaming
-4.  Filtre [[guide]] : la ligne est retenue, validée, puis émise en toute fin
+4.  Ligne [[guide]] : construite par le code à partir des outils d'action de l'agent
+    (ou interceptée et validée si le modèle l'écrit lui-même), émise en toute fin
 5.  Historique : cache mémoire mis à jour, écriture Neon en arrière-plan
 ```
+
+Le front envoie avec chaque question un `context` : `{"theme": "light"|"dark", "path": "/…"}`
+(thème affiché, page courante). Le chat ne « bascule » plus un site déjà dans le thème demandé.
 
 Latence mesurée (caches chauds) : le backend ajoute ~0 ms ; le premier token
 dépend de Haiku (≈ 0,5–1 s). Chaque requête logue `⚡ premier token à Xms`.
@@ -126,9 +133,33 @@ et parle-moi de ce qui te motive ») va à l'agent, qui répond et émet la lign
   `get_*` prioritaires sur la recherche vectorielle, « Je n'ai pas cette information. » sinon.
 - `claude-sonnet-5` réfléchit par défaut : `AGENT_EFFORT=low` (réglable) via `output_config.effort`.
 - Prompt système mis en cache (`cache_control`) ; il ne change que si la liste des projets actifs change.
-- **MCP SMS ouvert uniquement** si le visiteur demande à transmettre un message ou si le
-  protocole SMS est en cours (`wants_sms`). Les alertes autonomes sont détectées par regex dans `main.py`.
+- **Outils d'action** : `set_site_theme(mode)`, `navigate_site(path, target)`,
+  `open_project(slug, section)`. Le code valide chaque action (pages, sections, slugs actifs,
+  une seule visite) et écrit lui-même la ligne `[[guide]]` : le modèle ne peut plus annoncer
+  « je bascule en mode clair » sans que rien ne se passe. Thème déjà actif → l'outil le dit.
+- **Message à Jordan** : voir ci-dessous. Les alertes autonomes (LEAD / PROJET / ALERTE)
+  restent détectées par regex dans `main.py`.
 - Streaming réel (`stream_mode="messages"`) ; `run_rag_agent` (non streamé) reste pour l'évaluation.
+
+### Message à Jordan — `app/Rag/contact.py`
+
+L'ancien protocole (130 lignes de prompt) laissait le modèle promettre un envoi sans outil,
+exiger un courriel alors que le visiteur donnait un téléphone, ou être court-circuité par une
+question de clarification. Les étapes sont désormais **imposées par le code** :
+
+1. `prepare_contact_message(name, contact, message)` : nom, **courriel ou téléphone**, message
+   (8 à 500 caractères) ; liens, publicité et tentatives d'injection refusés ; brouillon gardé
+   pour la session (30 min). Un brouillon identique re-préparé garde sa date.
+2. L'agent montre le récapitulatif et demande une confirmation.
+3. `send_contact_message()` n'envoie que si un brouillon existe, **préparé lors d'un tour
+   précédent**, et si le dernier message du visiteur est une confirmation explicite
+   (« oui », « je confirme »…, sans « non » / « annule »).
+4. Limites : 2 envois par session, `DAILY_CONTACT_LIMIT` (20) par jour.
+
+Livraison : outil `send_sms` du serveur MCP, connexion ouverte **seulement au moment de
+l'envoi** (plus de handshake MCP à chaque question) ; repli sur Twilio en direct si le MCP
+ne répond pas. Le destinataire est toujours `ALERT_PHONE_NUMBER`, ou à défaut `JORDAN_PHONE`.
+L'agent n'annonce un envoi que si l'outil répond « ENVOYÉ » ; sinon il le dit honnêtement.
 
 ---
 
@@ -230,6 +261,8 @@ Aucune nouvelle variable obligatoire. Variables optionnelles :
 | `AGENT_EFFORT` | `low` | effort de réflexion de l'agent (`low`→`max`) |
 | `CANONICAL_CACHE_TTL` | `300` | durée du cache des tables canoniques (s) |
 | `HISTORY_CACHE_TTL` / `HISTORY_CACHE_MAX` | `1800` / `1000` | cache d'historique |
+| `DAILY_CONTACT_LIMIT` | `20` | messages à Jordan transmis par jour, au maximum |
+| `ALERT_PHONE_NUMBER` | `JORDAN_PHONE` | destinataire des messages (serveur MCP et repli Twilio) |
 
 `DATABASE_URL` (tables canoniques) et `DB_*` (vecteurs, historique) doivent pointer vers la
 **même** base Neon.
@@ -237,6 +270,17 @@ Aucune nouvelle variable obligatoire. Variables optionnelles :
 ---
 
 ## 11. Déploiement
+
+Avant chaque déploiement, le jeu d'évaluation (scénarios tirés des traces réelles) :
+
+```bash
+python -m app.evaluation.run_scenarios          # 37 contrôles déterministes, sans LLM
+python -m app.evaluation.run_scenarios --live   # + scénarios de bout en bout (appels LLM)
+```
+
+Rien n'y est écrit en base et aucun SMS ne part (livraison remplacée par un enregistreur).
+Les traces brutes exportées de LangSmith restent dans `dataset/`, ignoré par Git
+(conversations de visiteurs, numéros de téléphone).
 
 ```bash
 docker build -t kpo237/cv-chatbot-api:latest -t kpo237/cv-chatbot-api:<AAAA-MM-JJ-sujet> .

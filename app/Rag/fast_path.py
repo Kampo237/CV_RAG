@@ -108,9 +108,37 @@ _QUALITATIVE = re.compile(
 _SMS = re.compile(
     r"\b(sms|textos?|text message)\b|transmet\w*|laisse[rz]? (un )?(message|mot)|"
     r"envoie[rz]? (lui |a jordan |a yann |un )?(message|mot)|"
-    r"contacter (directement )?(jordan|yann)|lui ecrire"
+    r"contacter (directement )?(jordan|yann)|lui ecrire|"
+    # « dis à Jordan de me rappeler », « qu'il me recontacte », « appelle-moi »
+    r"\b(me |m')?(rappeler|rappelle|recontacter|recontacte|joindre)\b|appelle(-| )moi|"
+    r"\bdis(-| )lui\b|\bdire a (jordan|yann)\b|qu'il me (contacte|rappelle|appelle|ecrive)"
 )
-_SMS_FLOW = re.compile(r"tu confirmes|texto|sms|transmet|courriel|adresse e-?mail")
+_SMS_FLOW = re.compile(r"tu confirmes|texto|sms|transmet|courriel|adresse e-?mail|recapitulatif|te recontacter")
+
+# Fin de conversation : réponse fixe, sans question et sans appel au modèle
+# (avant : « Non c'est bon pour aujourd'hui » → trois questions de clarification
+# successives, chacune facturée).
+_CLOSING = re.compile(
+    r"^(non,? )?(merci( beaucoup| bien)?|parfait,? merci|super,? merci|ok,? merci|top,? merci|"
+    r"c'est (tout|bon)( pour (moi|aujourd'hui|l'instant|le moment))?( merci)?|ca (ira|va aller)|"
+    r"rien d'autre|pas d'autres? questions?|bonne (soiree|journee|nuit|fin de journee)|"
+    r"au revoir|bye|a (plus|bientot|la prochaine)|a\+|ciao|salut,? merci|"
+    r"je (confirme|pense) que (c'est|tout est) bon)([ ,!.]*(merci|bonne (soiree|journee)|a bientot|bye|"
+    r"pour aujourd'hui|c'est tout|ciao))*[ !.]*$"
+)
+_GOODBYES = (
+    "Merci pour l'échange, et à bientôt ! 👋",
+    "Avec plaisir. Bonne continuation ! 👋",
+    "Merci d'être passé par ici. À bientôt ! 👋",
+)
+
+
+def closing_reply(question: str, history: list[dict]) -> Optional[str]:
+    """Réponse d'au revoir si le message clôt la conversation, sinon None."""
+    q = normalize(question).replace("tout es bon", "tout est bon")
+    if "?" in q or len(q.split()) > 10 or not _CLOSING.match(q):
+        return None
+    return _GOODBYES[len(history or []) // 2 % len(_GOODBYES)]
 
 # Alias en plus du titre et du slug lus en base (appliqués seulement si le
 # slug existe parmi les projets actifs).
@@ -285,6 +313,11 @@ async def route_question(question: str) -> Optional[FastRoute]:
         return FastRoute("testimonials", navigate=nav)
     if _CONTACT.search(q):
         return FastRoute("contact", navigate=nav)
+    # Les projets passent avant les compétences : « tous mes projets avec leur
+    # stack » partait vers la table des compétences, et le modèle niait avoir
+    # des projets (les lignes de projets portent déjà leurs technologies).
+    if _PROJECTS.search(q):
+        return FastRoute("projects", navigate=nav)
     if _SKILLS.search(q):
         return FastRoute("skills", navigate=nav)
     if _EDUCATION.search(q):
@@ -344,6 +377,30 @@ def get_fast_llm() -> ChatAnthropic:
     return _llm_fast
 
 
+async def portfolio_brief() -> str:
+    """
+    Résumé compact et toujours vrai du portfolio (projets, poste principal,
+    compétences). Joint à chaque appel du chemin rapide : quand une route ne
+    transmet qu'une table, le modèle ne nie plus ce qui existe ailleurs
+    (« je n'ai aucune information sur mes projets »).
+    """
+    lines = []
+    projects = await canonical.fetch_or_empty("projects")
+    if projects:
+        lines.append("Projets actifs : " + " ; ".join(
+            f"{r.get('titre')} ({', '.join(map(str, (r.get('technologies') or [])[:6]))})" for r in projects))
+    experiences = canonical.annotate_experiences(await canonical.fetch_or_empty("experiences"))
+    main_jobs = [e for e in experiences if canonical.is_main_status(e["statut"])]
+    if main_jobs:
+        job = main_jobs[0]
+        lines.append(f"Poste principal actuel : {job.get('titre')} — {job.get('entreprise')} "
+                     f"({(job.get('type_experience') or '').lower()})")
+    skills = [s for s in await canonical.fetch_or_empty("skills") if (s.get("categorie") or "").lower() != "langues"]
+    if skills:
+        lines.append("Compétences : " + ", ".join(s["nom"] for s in skills if s.get("nom")))
+    return "\n".join(lines)
+
+
 async def _stream_llm(question: str, data: str, history: list[dict], nav_hint: str) -> AsyncIterator[str]:
     history_text = "\n".join(
         f"{'Visiteur' if m['role'] == 'user' else 'Moi'}: {m['content']}"
@@ -351,9 +408,12 @@ async def _stream_llm(question: str, data: str, history: list[dict], nav_hint: s
     ) or "Aucun."
     if last_answer_asked(history):
         nav_hint += NO_QUESTION_HINT
+    brief = await portfolio_brief()
     human = (
         f"Date du jour : {datetime.date.today().isoformat()}\n\n"
-        f"Données (lignes de la base du portfolio) :\n{data}\n\n"
+        + (f"Résumé du portfolio (vrai ; sert seulement à ne jamais nier ce qui existe) :\n{brief}\n\n"
+           if brief else "")
+        + f"Données (lignes de la base du portfolio) :\n{data}\n\n"
         f"Échanges précédents :\n{history_text}\n\n"
         f"{nav_hint}"
         f"Question du visiteur : {question}\n\n"
@@ -437,11 +497,14 @@ def _nav_hint(what: str) -> str:
             "formule du type « Voici … », sans décrire de mécanisme technique.\n\n")
 
 
-async def prepare_fast_answer(route: FastRoute, question: str, history: list[dict]) -> Optional[FastAnswer]:
+async def prepare_fast_answer(route: FastRoute, question: str, history: list[dict],
+                              site: Optional[dict] = None) -> Optional[FastAnswer]:
     """
     Prépare la réponse. None si la table canonique est vide / injoignable ou
     si le projet est introuvable → l'appelant retombe sur le pipeline normal.
+    site : contexte envoyé par le front (thème actuel, page actuelle).
     """
+    site = site or {}
     slugs = await canonical.get_active_slugs()
 
     def guide(*actions) -> str:
@@ -469,12 +532,18 @@ async def prepare_fast_answer(route: FastRoute, question: str, history: list[dic
                                 "mes compétences — je peux aussi te guider dans le site."), "", "greeting")
 
     if route.kind == "theme":
-        theme_line = guide({"op": "set_theme", "mode": route.mode})
         mode_label = "sombre" if route.mode == "dark" else "clair"
+        already = site.get("theme") == route.mode
+        theme_line = "" if already else guide({"op": "set_theme", "mode": route.mode})
+        if already and not route.current:
+            # Le front a dit quel thème est affiché : pas de faux « voilà, c'est fait »
+            return FastAnswer(_once(f"Le site est déjà en mode {mode_label} {'🌙' if route.mode == 'dark' else '☀️'}"),
+                              "", f"theme:{route.mode}:deja")
         if route.current:
             profile = await canonical.get_profile()
-            hint = (f"Le site passe en mode {mode_label} en même temps (c'est déjà géré). Mentionne-le en "
-                    "quelques mots, puis réponds vraiment au reste du message du visiteur (commentaire, "
+            hint = ((f"Le site est déjà en mode {mode_label} : dis-le en quelques mots" if already else
+                     f"Le site passe en mode {mode_label} en même temps (c'est déjà géré). Mentionne-le en "
+                     "quelques mots") + ", puis réponds vraiment au reste du message du visiteur (commentaire, "
                     "question, ressenti), en 1 à 3 phrases.\n\n")
             return FastAnswer(_stream_llm(question, "Profil :\n" + _llm_data([profile]) if profile else "Aucune.",
                                           history, hint), theme_line, f"theme:{route.mode}:reponse")
