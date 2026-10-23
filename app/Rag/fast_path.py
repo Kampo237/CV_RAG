@@ -92,6 +92,7 @@ _SKILLS = re.compile(
     r"(de l')?experience (en|avec)|ton niveau|niveau en|competences?|technos?|"
     r"technologies|langages?|frameworks?|stack|skills?)\b"
 )
+_IN_A_JOB = re.compile(r"\b(en entreprise|au travail|dans un (emploi|poste|job)|professionnellement|en milieu de travail|chez un employeur)\b")
 # « Où travailles-tu ? », « ton poste actuel » → seulement le poste principal
 # « Quel poste recherches-tu ? » : le type d'emploi visé (profil.recherche_type),
 # pas les expériences — RAGAS a montré que la route expériences faisait inventer
@@ -327,6 +328,11 @@ async def route_question(question: str) -> Optional[FastRoute]:
     # des projets (les lignes de projets portent déjà leurs technologies).
     if _PROJECTS.search(q):
         return FastRoute("projects", navigate=nav)
+    # « As-tu déjà fait du soutien en entreprise ? » : une expérience, pas une
+    # compétence — la route compétences faisait attribuer le soutien
+    # informatique au poste actuel (relevé par RAGAS). L'agent croise les deux.
+    if _SKILLS.search(q) and _IN_A_JOB.search(q):
+        return None
     if _SKILLS.search(q):
         return FastRoute("skills", navigate=nav)
     if _EDUCATION.search(q):
@@ -358,6 +364,8 @@ Règles :
   formation terminée comme en cours.
 - Expériences : respecte le champ « statut » tel quel. Un poste sur appel n'est jamais un
   emploi régulier ni un temps partiel ; un emploi secondaire n'est jamais le poste principal.
+- Compétences : n'attribue jamais une compétence ou une tâche à un employeur ou à un poste
+  précis si la ligne de cette expérience ne le dit pas.
 - Témoignages et personnes citées : n'attribue jamais de genre (pas de « il » / « elle ») ;
   reprends le nom, ou tourne la phrase autrement.
 - Ne dis jamais que tu ne peux pas naviguer, ouvrir une page ou changer l'apparence du site :

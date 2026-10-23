@@ -60,7 +60,7 @@ TEST_DATASET = [
         "user_input": "Ton travail chez Globatech, c'est un emploi régulier ?",
         "reference": ("Non. Chez Globatech (sous-traitant de Rio Tinto), il est préposé à l'entretien industriel sur "
                       "appel seulement : il y va selon ses disponibilités et peut refuser un appel."),
-        "theme": "experiences", "path": "agent",
+        "theme": "experiences", "path": "rapide",
     },
     {
         "user_input": "As-tu déjà fait du soutien informatique en entreprise ?",
@@ -141,7 +141,7 @@ TEST_DATASET = [
         "user_input": "As-tu de l'expérience avec le cloud ?",
         "reference": ("Oui : Azure (déploiement de Super CChic) et AWS EC2 (hébergement de production du chatbot RAG), "
                       "ainsi que Linux, Docker, DNS, certificats TLS, proxy inverse et pare-feu."),
-        "theme": "competences", "path": "agent",
+        "theme": "competences", "path": "rapide",
     },
     # --- Témoignages et règles ------------------------------------------------
     {
