@@ -1,0 +1,2 @@
+# Outils de test (CI et local) — l'évaluation RAGAS a ses propres dépendances (ragas)
+pytest>=8.0.0

@@ -93,6 +93,13 @@ _SKILLS = re.compile(
     r"technologies|langages?|frameworks?|stack|skills?)\b"
 )
 # « Où travailles-tu ? », « ton poste actuel » → seulement le poste principal
+# « Quel poste recherches-tu ? » : le type d'emploi visé (profil.recherche_type),
+# pas les expériences — RAGAS a montré que la route expériences faisait inventer
+# un poste recherché au modèle.
+_JOB_SEARCH = re.compile(
+    r"\b(recherches?(-| )tu|cherches?(-| )tu|tu (re)?cherches|en recherche|disponible|disponibilite|"
+    r"(poste|emploi|job|travail|type de poste) (recherche|vise|souhaite))\b"
+)
 _CURRENT_JOB = re.compile(
     r"\b(ou travailles|tu travailles ou|travailles-tu|tu bosses|bosses-tu|"
     r"(poste|emploi|job|travail) actuel|actuellement|en ce moment|que fais-tu dans la vie)\b"
@@ -307,6 +314,8 @@ async def route_question(question: str) -> Optional[FastRoute]:
     if len(named) == 1:
         return FastRoute("project", navigate=nav, slug=named[0])
 
+    if _JOB_SEARCH.search(q) and (_WORK.search(q) or "recherch" in q or "cherch" in q):
+        return FastRoute("job_search", navigate=nav)
     if _CURRENT_JOB.search(q) and _WORK.search(q):
         return FastRoute("experiences", navigate=nav, current=True)
     if _TESTIMONIALS.search(q):
@@ -550,6 +559,19 @@ async def prepare_fast_answer(route: FastRoute, question: str, history: list[dic
         text_ = ("Voilà, le site passe en mode sombre 🌙" if route.mode == "dark"
                  else "Voilà, le site passe en mode clair ☀️")
         return FastAnswer(_once(text_), theme_line, f"theme:{route.mode}")
+
+    if route.kind == "job_search":
+        # Réponse fixe depuis le profil : aucun poste visé inventé
+        profile = await canonical.get_profile()
+        wanted = (profile.get("recherche_type") or "").strip()
+        if not wanted:
+            return FastAnswer(_once("Je n'ai pas cette information."), "", "job_search:vide")
+        text_ = f"Je recherche un {wanted[0].lower()}{wanted[1:]}."
+        if profile.get("disponible") is True:
+            text_ += " Je suis disponible en ce moment."
+        nav_line = guide({"op": "navigate", "path": "/"},
+                         {"op": "focus", "target": "home-contact"}) if route.navigate else ""
+        return FastAnswer(_once(text_ + " 💼"), nav_line, "job_search")
 
     if route.kind == "about_me":
         profile = await canonical.get_profile()
