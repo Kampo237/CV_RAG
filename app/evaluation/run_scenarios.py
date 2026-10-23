@@ -76,6 +76,8 @@ def deterministic() -> None:
         "Comment te contacter ?": "contact",
         "Tu connais Docker ?": "skills",
         "Où travailles-tu en ce moment ?": "experiences",
+        "Quel type de poste recherches-tu ?": "job_search",
+        "As-tu déjà fait du soutien informatique en entreprise ?": None,
         "Quel est ton meilleur projet et pourquoi ?": None,
         "Pourquoi l'informatique ?": None,
         "peux-tu dire à Jordan de me rappeler ?": None,

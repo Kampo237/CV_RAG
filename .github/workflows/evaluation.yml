@@ -1,0 +1,60 @@
+# Contrôles déterministes à chaque PR : routeur, fins de conversation, actions du
+# site, règles d'envoi des messages, authentification des routes.
+# Aucun appel LLM (gratuit) ; la base Neon est lue avec le rôle ci_lecture
+# (lecture seule, secret CI_DATABASE_URL). Les scénarios --live et RAGAS restent
+# à lancer en local.
+name: Évaluation
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: evaluation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  controles:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      DATABASE_URL: ${{ secrets.CI_DATABASE_URL }}
+      # Les clients sont construits à l'import mais jamais appelés ici
+      ANTHROPIC_API_KEY: ci-sans-cle
+      VOYAGE_API_KEY: ci-sans-cle
+      LANGSMITH_TRACING: "false"
+      PYTHONIOENCODING: utf-8
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+
+      - name: Dépendances
+        run: pip install -r requirements.txt -r requirements-dev.txt
+
+      - name: Variables DB_* déduites de DATABASE_URL
+        run: |
+          python - <<'EOF' >> "$GITHUB_ENV"
+          import os
+          from urllib.parse import urlsplit, unquote
+          u = urlsplit(os.environ["DATABASE_URL"])
+          print(f"DB_USER={u.username}")
+          print(f"DB_PASSWORD={unquote(u.password)}")
+          print(f"DB_HOST={u.hostname}")
+          print(f"DB_PORT={u.port or 5432}")
+          print(f"DB_NAME={u.path.lstrip('/')}")
+          EOF
+
+      - name: Scénarios déterministes
+        run: python -m app.evaluation.run_scenarios
+
+      - name: Tests des correctifs (auth des routes)
+        run: python -m pytest tests -q

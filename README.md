@@ -65,6 +65,7 @@ app/
     vector_store.py, retrieval.py       pgvector, reranking Voyage AI
   rebuild_knowledge_cache.py   régénère datas + embeddings depuis les tables
   evaluation/run_scenarios.py  jeu d'évaluation de non-régression
+  evaluation/run_baseline.py   évaluation RAGAS (qualité des réponses)
 mcp_servers/sms_server/    serveur MCP qui envoie le SMS (outil send_sms)
 docs/                      documentation détaillée
 sql/                       script d'alignement initial des données
@@ -106,8 +107,8 @@ En local, pointer l'API vers le serveur MCP avec `MCP_SMS_URL=http://localhost:8
 Optionnelles : `AGENT_EFFORT` (`low`), `CANONICAL_CACHE_TTL` (300 s), `HISTORY_CACHE_TTL` /
 `HISTORY_CACHE_MAX`, `DAILY_LLM_BUDGET`, `DAILY_CONTACT_LIMIT`, `MAX_REQUESTS_PER_SESSION`,
 `MAX_QUESTION_CHARS`, `IP_WINDOW_SECONDS` / `IP_MAX_IN_WINDOW`, `ALERT_COOLDOWN_SEC`,
-`ENVIRONMENT`, `LANGSMITH_*` (traçage). `OPENAI_API_KEY` ne sert qu'à l'évaluation RAGAS
-(`app/evaluation/run_baseline.py`).
+`ENVIRONMENT`, `LANGSMITH_*` (traçage), `RAGAS_JUDGE_MODEL` (juge de l'évaluation RAGAS,
+`claude-opus-5` par défaut).
 
 ## Docker
 
@@ -135,10 +136,26 @@ Scénarios tirés de vraies conversations (anonymisées), à lancer avant chaque
 ```bash
 python -m app.evaluation.run_scenarios          # contrôles déterministes, sans LLM
 python -m app.evaluation.run_scenarios --live   # + scénarios de bout en bout (appels LLM)
+pip install -r requirements-dev.txt && python -m pytest tests   # auth des routes
 ```
 
-Rien n'est écrit en base et aucun SMS ne part. `tests/test_corrections.py` couvre
-l'authentification des routes (pytest, à installer à part).
+Rien n'est écrit en base et aucun SMS ne part.
+
+**CI** (`.github/workflows/evaluation.yml`) : à chaque PR et à chaque push sur `main`, GitHub
+Actions lance les contrôles déterministes et pytest. Pas d'appel LLM ; la base est lue avec le
+rôle Neon `ci_lecture` (lecture seule, secret `CI_DATABASE_URL`).
+
+**Qualité des réponses (RAGAS)** : `app/evaluation/run_baseline.py` pose les questions de
+`test_dataset.py` au pipeline de production (chemin rapide ou agent, selon le routeur) et fait
+noter fidélité, rappel du contexte et exactitude factuelle par un juge Claude Opus 5. Résultats
+dans `app/evaluation/results/`. À relancer après un changement de prompt ou de données — et
+mettre à jour les réponses de référence quand les données changent.
+
+```bash
+pip install ragas
+python -m app.evaluation.run_baseline --limit 3   # essai
+python -m app.evaluation.run_baseline             # jeu complet (22 questions)
+```
 
 ## API
 

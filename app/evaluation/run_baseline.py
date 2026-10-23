@@ -1,259 +1,191 @@
 """
-Script d'évaluation RAGAS — Baseline du pipeline RAG actuel.
+Évaluation RAGAS — qualité des réponses du chat, tel qu'il tourne en production.
 
-Ce script :
-1. Charge le dataset de test (test_dataset.py)
-2. Exécute chaque question dans le pipeline RAG complet (run_rag_graph)
-3. Génère la réponse via la chaîne de génération
-4. Évalue le tout avec les métriques RAGAS
-5. Sauvegarde les résultats dans un CSV
+Complète app/evaluation/run_scenarios.py (comportements) par une note de
+qualité : fidélité au contexte, rappel du contexte, exactitude factuelle.
+
+Pour chaque question de test_dataset.py :
+  1. le routeur décide comme en production : chemin rapide (Haiku) ou agent (Sonnet 5) ;
+  2. on garde la réponse ET le contexte réellement donné au modèle
+     (données de la base pour le chemin rapide, résultats d'outils pour l'agent) ;
+  3. RAGAS note le tout avec un juge Claude Opus 5 — un autre modèle que ceux
+     évalués, pour éviter qu'un modèle note ses propres réponses.
 
 Usage :
-    cd FastAPIProject
-    python -m app.evaluation.run_baseline
-"""
+    python -m app.evaluation.run_baseline              # tout le jeu (≈ quelques dollars de juge)
+    python -m app.evaluation.run_baseline --limit 3    # essai rapide
 
-import asyncio
-import json
+Rien n'est écrit dans chat_sessions ; aucun message n'est envoyé.
+Résultats : app/evaluation/results/ragas_<horodatage>.csv et _scores.json
+"""
 import os
+import re
 import sys
 import csv
-import time
+import json
+import asyncio
+import logging
+from collections import defaultdict
 from datetime import datetime
+
 from dotenv import load_dotenv
 
-# Charger le .env AVANT tout import LangChain
-load_dotenv()
+load_dotenv()  # avant tout import LangChain
+logging.disable(logging.CRITICAL)
 
-from app.Rag.graph import run_rag_graph
-from app.Rag.agent import run_rag_agent
-from app.Rag.generation import generate_response
-from app.evaluation.test_dataset import TEST_DATASET
+from app.Rag import fast_path  # noqa: E402
+from app.Rag.agent import run_rag_agent  # noqa: E402
+from app.evaluation.test_dataset import TEST_DATASET  # noqa: E402
+
+JUDGE_MODEL = os.getenv("RAGAS_JUDGE_MODEL", "claude-opus-5")
+GUIDE_LINE = re.compile(r"\[\[guide\]\].*$", re.S)
 
 
 # ═══════════════════════════════════════════════════════════════
-# ÉTAPE 1 — Exécuter le pipeline RAG pour chaque question
+# 1. Réponse et contexte, comme en production
 # ═══════════════════════════════════════════════════════════════
 
-async def run_pipeline_on_question(question: str) -> dict:
-    """
-    Exécute le pipeline RAG complet et retourne :
-      - context  : le contexte récupéré (ce que le LLM voit)
-      - answer   : la réponse générée (tokens concaténés)
-      - intent   : l'intent détecté par le routeur
-    """
-    # Étape A — LangGraph (rephrase → route → retrieve → synthesize)
-    final_state = await run_rag_agent(
-        question=question,
-        session_id="eval-baseline",
-        history=[],  # Pas d'historique pour l'évaluation
-    )
+async def answer_like_production(question: str) -> dict:
+    """Route la question comme /chat/ (sans historique) et renvoie réponse, contexte et chemin."""
+    route = await fast_path.route_question(question)
+    if route:
+        captured: dict = {}
+        original = fast_path._stream_llm
 
-    context = final_state.get("context", "")
-    intent = final_state.get("intent", "UNKNOWN")
+        async def spy(q, data, history, nav_hint):
+            # Contexte réellement vu par Haiku : résumé du portfolio + données de la route
+            captured["context"] = f"{await fast_path.portfolio_brief()}\n\n{data}"
+            async for token in original(q, data, history, nav_hint):
+                yield token
 
-    # Étape B — Génération (collecter tous les tokens du stream)
-    answer = final_state.get("answer", "")
-
-    return {
-        "context": context,
-        "answer": answer,
-        "intent": intent,
-    }
-
-
-async def collect_pipeline_results() -> list[dict]:
-    """
-    Exécute le pipeline sur toutes les questions du dataset.
-    Retourne une liste de dicts prêts pour RAGAS.
-    """
-    results = []
-    total = len(TEST_DATASET)
-
-    for i, sample in enumerate(TEST_DATASET):
-        question = sample["user_input"]
-        print(f"\n[{i+1}/{total}] Question : {question[:60]}...")
-
+        fast_path._stream_llm = spy
         try:
-            pipeline_result = await run_pipeline_on_question(question)
+            fast = await fast_path.prepare_fast_answer(route, question, [], {})
+        finally:
+            fast_path._stream_llm = original
+        if fast:
+            text = "".join([token async for token in fast.stream])
+            text = GUIDE_LINE.sub("", text).strip()
+            # Réponse fixe (CV, langues…) : construite depuis la base, elle est son propre contexte
+            return {"answer": text, "context": captured.get("context") or text, "path": "rapide", "route": fast.label}
 
-            results.append({
-                "user_input": question,
-                "response": pipeline_result["answer"],
-                "retrieved_contexts": [pipeline_result["context"]] if pipeline_result["context"] else [],
-                "reference": sample["reference"],
-                # Métadonnées (pas utilisées par RAGAS mais utiles pour l'analyse)
-                "_intent_expected": sample["intent"],
-                "_intent_actual": pipeline_result["intent"],
-            })
+    result = await run_rag_agent(question=question, session_id="eval-ragas", history=[])
+    return {"answer": result.get("answer", ""), "context": result.get("context", ""), "path": "agent", "route": "agent"}
 
-            intent_match = "✅" if sample["intent"] == pipeline_result["intent"] else "❌"
-            print(f"         Intent : {pipeline_result['intent']} {intent_match}")
-            print(f"         Réponse : {pipeline_result['answer'][:80]}...")
 
+async def collect(dataset: list[dict]) -> list[dict]:
+    rows = []
+    for i, sample in enumerate(dataset, 1):
+        q = sample["user_input"]
+        print(f"[{i}/{len(dataset)}] {q}")
+        try:
+            out = await answer_like_production(q)
         except Exception as e:
-            print(f"         ❌ ERREUR : {e}")
-            results.append({
-                "user_input": question,
-                "response": f"[ERREUR: {e}]",
-                "retrieved_contexts": [],
-                "reference": sample["reference"],
-                "_intent_expected": sample["intent"],
-                "_intent_actual": "ERROR",
-            })
-
-    return results
+            out = {"answer": f"[ERREUR : {type(e).__name__}: {e}]", "context": "", "path": "erreur", "route": "erreur"}
+        flag = "" if out["path"] == sample.get("path") else f"  (chemin attendu : {sample.get('path')})"
+        print(f"      → {out['path']} [{out['route']}]{flag} : {out['answer'][:90]}")
+        rows.append({
+            "user_input": q,
+            "response": out["answer"],
+            "retrieved_contexts": [out["context"]] if out["context"] else [],
+            "reference": sample["reference"],
+            "theme": sample.get("theme", ""),
+            "path_expected": sample.get("path", ""),
+            "path": out["path"],
+            "route": out["route"],
+        })
+    return rows
 
 
 # ═══════════════════════════════════════════════════════════════
-# ÉTAPE 2 — Évaluation RAGAS
+# 2. Notation RAGAS (juge Claude Opus 5)
 # ═══════════════════════════════════════════════════════════════
 
-def run_ragas_evaluation(results: list[dict]) -> dict:
-    """
-    Lance l'évaluation RAGAS sur les résultats collectés.
-
-    Métriques utilisées :
-      - Faithfulness     : la réponse est-elle fidèle au contexte récupéré ?
-      - LLMContextRecall : le retrieval a-t-il trouvé les bonnes informations ?
-      - FactualCorrectness : la réponse est-elle factuellement correcte ?
-    """
-    from ragas import EvaluationDataset, evaluate
+def judge_llm():
+    from langchain_anthropic import ChatAnthropic
     from ragas.llms import LangchainLLMWrapper
-    from ragas.metrics import LLMContextRecall, Faithfulness, FactualCorrectness
-    from langchain_openai import ChatOpenAI
 
-    # Préparer les données au format RAGAS
-    # On retire les métadonnées internes (_intent_*)
-    ragas_data = [
-        {
-            "user_input": r["user_input"],
-            "response": r["response"],
-            "retrieved_contexts": r["retrieved_contexts"],
-            "reference": r["reference"],
-        }
-        for r in results
-    ]
-
-    # Créer le dataset RAGAS
-    eval_dataset = EvaluationDataset.from_list(ragas_data)
-
-    # LLM évaluateur (on utilise OpenAI pour éviter le biais
-    # d'évaluer Claude avec Claude)
-    evaluator_llm = LangchainLLMWrapper(
-        ChatOpenAI(
-            model="gpt-4o-mini",
-            temperature=0,
-            api_key=os.getenv("OPENAI_API_KEY"),
-        )
+    llm = ChatAnthropic(
+        model_name=JUDGE_MODEL,
+        api_key=os.getenv("ANTHROPIC_API_KEY"),
+        max_tokens=8000,
+        # Repli côté serveur si les classifieurs de sécurité refusent une requête de notation
+        betas=["server-side-fallback-2026-07-01"],
+        # Opus 5 refuse temperature ; effort bas pour un juge (coût, latence)
+        model_kwargs={"extra_body": {"output_config": {"effort": "low"}, "fallbacks": "default"}},
     )
+    # bypass_* : RAGAS n'envoie ni temperature ni n (refusés par ce modèle)
+    return LangchainLLMWrapper(llm, bypass_temperature=True, bypass_n=True)
 
-    # Métriques
-    metrics = [
-        Faithfulness(),
-        LLMContextRecall(),
-        FactualCorrectness(),
-    ]
 
-    print("\n" + "=" * 60)
-    print("🔬 Lancement de l'évaluation RAGAS...")
-    print("=" * 60)
+def score(rows: list[dict]) -> list[dict]:
+    from ragas import EvaluationDataset, evaluate
+    from ragas.metrics import Faithfulness, FactualCorrectness, LLMContextRecall
 
-    # Lancer l'évaluation
-    result = evaluate(
-        dataset=eval_dataset,
-        metrics=metrics,
-        llm=evaluator_llm,
-    )
-
+    dataset = EvaluationDataset.from_list([
+        {k: r[k] for k in ("user_input", "response", "retrieved_contexts", "reference")} for r in rows
+    ])
+    print(f"\n🔬 Notation RAGAS (juge : {JUDGE_MODEL})…")
+    result = evaluate(dataset=dataset, metrics=[Faithfulness(), LLMContextRecall(), FactualCorrectness()],
+                      llm=judge_llm(), show_progress=True)
     df = result.to_pandas()
-    scores = {}
-    for col in df.columns:
-        if col not in ("user_input", "response", "retrieved_contexts", "reference"):
-            try:
-                scores[col] = float(df[col].mean())
-            except (TypeError, ValueError):
-                pass
-    print(f"\n📊 Scores RAGAS :")
-    for metric, score in scores.items():
-        print(f"   {metric:30s} : {score:.4f}")
-    return scores
+    metric_cols = [c for c in df.columns if c not in ("user_input", "response", "retrieved_contexts", "reference")]
+    for row, (_, scores) in zip(rows, df[metric_cols].iterrows()):
+        row["scores"] = {c: (None if scores[c] != scores[c] else round(float(scores[c]), 4)) for c in metric_cols}
+    return rows
+
+
+def summarize(rows: list[dict]) -> dict:
+    def mean(values):
+        values = [v for v in values if v is not None]
+        return round(sum(values) / len(values), 4) if values else None
+
+    metrics = sorted({m for r in rows for m in r.get("scores", {})})
+    groups = {"global": rows}
+    for key in ("path", "theme"):
+        for r in rows:
+            groups.setdefault(f"{key}:{r[key]}", []).append(r)
+    summary = {name: {m: mean([r["scores"].get(m) for r in group]) for m in metrics} | {"n": len(group)}
+               for name, group in groups.items()}
+    summary["routage_attendu"] = round(sum(r["path"] == r["path_expected"] for r in rows) / len(rows), 4)
+    return summary
 
 
 # ═══════════════════════════════════════════════════════════════
-# ÉTAPE 3 — Sauvegarde des résultats
+# 3. Sauvegarde
 # ═══════════════════════════════════════════════════════════════
 
-def save_results(results: list[dict], ragas_scores: dict, label: str = "baseline"):
-    """Sauvegarde les résultats dans un CSV horodaté."""
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    output_dir = os.path.join(os.path.dirname(__file__), "results")
-    os.makedirs(output_dir, exist_ok=True)
-
-    # CSV détaillé par question
-    csv_path = os.path.join(output_dir, f"{label}_{timestamp}.csv")
+def save(rows: list[dict], summary: dict) -> None:
+    stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    out_dir = os.path.join(os.path.dirname(__file__), "results")
+    os.makedirs(out_dir, exist_ok=True)
+    csv_path = os.path.join(out_dir, f"ragas_{stamp}.csv")
+    metrics = sorted({m for r in rows for m in r.get("scores", {})})
     with open(csv_path, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=[
-            "user_input", "response", "reference",
-            "retrieved_contexts", "_intent_expected", "_intent_actual",
-        ])
-        writer.writeheader()
-        for r in results:
-            row = r.copy()
-            row["retrieved_contexts"] = json.dumps(row["retrieved_contexts"], ensure_ascii=False)[:500]
-            writer.writerow(row)
-
-    # Scores globaux
-    scores_path = os.path.join(output_dir, f"{label}_{timestamp}_scores.json")
-    with open(scores_path, "w", encoding="utf-8") as f:
-        json.dump({
-            "label": label,
-            "timestamp": timestamp,
-            "num_questions": len(results),
-            "scores": {k: round(v, 4) if isinstance(v, float) else v for k, v in ragas_scores.items()},
-            "intent_accuracy": sum(
-                1 for r in results if r["_intent_expected"] == r["_intent_actual"]
-            ) / len(results),
-        }, f, indent=2, ensure_ascii=False)
-
-    print(f"\n📁 Résultats sauvegardés :")
-    print(f"   CSV détaillé : {csv_path}")
-    print(f"   Scores       : {scores_path}")
-
-    return csv_path, scores_path
+        writer = csv.writer(f)
+        writer.writerow(["user_input", "theme", "path_expected", "path", "route", *metrics, "response", "reference"])
+        for r in rows:
+            writer.writerow([r["user_input"], r["theme"], r["path_expected"], r["path"], r["route"],
+                             *[r.get("scores", {}).get(m) for m in metrics], r["response"], r["reference"]])
+    json_path = os.path.join(out_dir, f"ragas_{stamp}_scores.json")
+    with open(json_path, "w", encoding="utf-8") as f:
+        json.dump({"timestamp": stamp, "judge": JUDGE_MODEL, "num_questions": len(rows), "summary": summary},
+                  f, indent=2, ensure_ascii=False)
+    print(f"\n📁 {csv_path}\n📁 {json_path}")
 
 
-# ═══════════════════════════════════════════════════════════════
-# POINT D'ENTRÉE
-# ═══════════════════════════════════════════════════════════════
-
-async def main():
-    print("=" * 60)
-    print("🚀 ÉVALUATION RAGAS — BASELINE")
-    print(f"   {len(TEST_DATASET)} questions de test")
-    print(f"   Pipeline : LangGraph StateGraph (agent)")
-    print("=" * 60)
-
-    # Étape 1 — Exécuter le pipeline
-    results = await collect_pipeline_results()
-
-    # Résumé des intents
-    intent_correct = sum(1 for r in results if r["_intent_expected"] == r["_intent_actual"])
-    print(f"\n📊 Précision du routeur : {intent_correct}/{len(results)} ({intent_correct/len(results)*100:.0f}%)")
-
-    # Étape 2 — Évaluation RAGAS
-    try:
-        ragas_result = run_ragas_evaluation(results)
-        print("   (scores affichés ci-dessus)")
-    except Exception as e:
-        print(f"\n❌ Erreur RAGAS : {e}")
-        print("   (vérifie que ragas et datasets sont installés : pip install ragas datasets)")
-        ragas_result = {"error": str(e)}
-
-    # Étape 3 — Sauvegarde
-    save_results(results, ragas_result, label="baseline_automate")
-
-    print("\n✅ Évaluation baseline terminée !")
+async def main() -> None:
+    limit = int(sys.argv[sys.argv.index("--limit") + 1]) if "--limit" in sys.argv else None
+    dataset = TEST_DATASET[:limit] if limit else TEST_DATASET
+    print(f"🚀 Évaluation RAGAS — {len(dataset)} questions, pipeline de production, juge {JUDGE_MODEL}\n")
+    rows = score(await collect(dataset))
+    summary = summarize(rows)
+    print("\n📊 Scores")
+    for name in ("global", "path:rapide", "path:agent"):
+        if name in summary:
+            print(f"   {name:<12} " + "  ".join(f"{k}={v}" for k, v in summary[name].items()))
+    print(f"   routage conforme à l'attendu : {summary['routage_attendu']:.0%}")
+    save(rows, summary)
 
 
 if __name__ == "__main__":
